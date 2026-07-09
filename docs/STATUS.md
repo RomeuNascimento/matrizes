@@ -26,6 +26,8 @@ passando; typecheck e build limpos.
 | Varredura recursiva + hash + import incremental | ✅ | `filesystem/`, `services/importer.ts` |
 | **Navegação por subpastas** (árvore recolhível) | ✅ | `repository.listarArvorePastas` + `renderer` |
 | **Renomear** (nome exibido, no painel de detalhes) | ✅ | `renderer/app.ts` |
+| **Seleção múltipla na grade** (caixa no card, Ctrl/Shift+clique, Ctrl+A, Esc) | ✅ | `renderer/app.ts` |
+| **Ações em lote**: favoritar, marcar testada, renomear e copiar | ✅ | barra flutuante em `renderer/app.ts` |
 | Favoritas / Testadas / Não testadas (lateral) | ✅ | `renderer/app.ts` |
 | Cópia segura para pendrive | ✅ | `services/copier.ts` |
 | Backup + verificação de integridade | ✅ | `db/backup.ts` |
@@ -35,9 +37,6 @@ passando; typecheck e build limpos.
 
 | Item | Estado | Observação |
 |---|---|---|
-| Seleção múltipla na grade | 🟡 | cópia já aceita vários ids; falta a UI de seleção |
-| Renomear em lote | 🟡 | depende da seleção múltipla |
-| Favoritar/testar/copiar em lote | 🟡 | idem |
 | Tela de duplicados | 🟡 | `listarDuplicados()` pronto |
 | Tela de arquivos com erro | 🟡 | `listarErros()` pronto |
 | Categorias/etiquetas (edição) | 🟡 | CRUD parcial no repositório |
@@ -92,11 +91,21 @@ subpastas na base já existente, sem reimportar).
 
 ## Próximos passos sugeridos (para a nova sessão)
 
-1. **Seleção múltipla na grade** → habilita favoritar/testar/copiar/renomear em
-   lote (o pedido natural depois da navegação por pastas).
-2. Investigar as **miniaturas pretas** (ver Observações).
-3. Telas de **duplicados** e **erros** (backends prontos).
+1. Investigar as **miniaturas pretas** (ver Observações).
+2. Telas de **duplicados** e **erros** (backends prontos).
+3. Edição de **categorias/etiquetas** (CRUD parcial no repositório).
 4. Quando estabilizar: **fábrica de instalador** (GitHub Actions) + auto-update.
+
+## Como usar a seleção múltipla (para explicar à usuária)
+
+- Passe o mouse sobre um desenho e clique na **caixinha** que aparece no canto
+  para selecioná-lo. Uma **barra aparece embaixo** com as ações em lote.
+- Atalhos opcionais: **Ctrl+clique** marca/desmarca; **Shift+clique** marca um
+  intervalo; **Ctrl+A** seleciona todos os visíveis; **Esc** limpa.
+- Ações em lote: **Favoritar**, **Marcar testada**, **Renomear em lote**
+  (dá um nome base e numera: "Flor 1", "Flor 2"…) e **Copiar para pendrive**.
+- Clique simples (sem tecla) continua abrindo os **detalhes**; duplo-clique
+  abre o local do arquivo — nada disso mudou.
 
 ## Decisões firmadas
 

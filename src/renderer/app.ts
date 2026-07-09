@@ -23,6 +23,10 @@ const estado = {
   selecionada: null as number | null,
   filtroAtivo: "todos" as string,
   expandidas: new Set<string>(),
+  // Seleção múltipla (lote)
+  marcadas: new Set<number>(),
+  itensAtuais: [] as MatrizResumo[],
+  ultimoIndice: null as number | null,
 };
 
 // ---- Inicialização --------------------------------------------------------
@@ -60,6 +64,24 @@ async function iniciar() {
       const novo = b.dataset.zoom === "g" ? Math.min(atual + 40, 340) : Math.max(atual - 40, 140);
       document.documentElement.style.setProperty("--card", `${novo}px`);
     };
+  });
+
+  // Barra de ações em lote
+  $<HTMLButtonElement>("#lote-fav").onclick = () => favoritarLote();
+  $<HTMLButtonElement>("#lote-test").onclick = () => testarLote();
+  $<HTMLButtonElement>("#lote-renomear").onclick = () => renomearLote();
+  $<HTMLButtonElement>("#lote-copiar").onclick = () => copiarParaPendrive([...estado.marcadas]);
+  $<HTMLButtonElement>("#lote-limpar").onclick = () => limparSelecao();
+
+  // Esc limpa a seleção; Ctrl/Cmd+A seleciona tudo o que está visível
+  document.addEventListener("keydown", (e) => {
+    const digitando = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target as HTMLElement)?.tagName ?? "");
+    if (e.key === "Escape" && estado.marcadas.size) {
+      limparSelecao();
+    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a" && !digitando) {
+      e.preventDefault();
+      selecionarTodasVisiveis();
+    }
   });
 
   api.onProgresso(atualizarProgresso);
@@ -181,6 +203,11 @@ async function recarregar() {
   const { total, itens } = await api.listarMatrizes(estado.filtros, estado.ordenacao, {
     offset: 0, limite: 500,
   });
+  estado.itensAtuais = itens as MatrizResumo[];
+  // Descarta da seleção itens que saíram da lista atual (filtro/busca mudou)
+  const visiveis = new Set(estado.itensAtuais.map((m) => m.id));
+  for (const id of [...estado.marcadas]) if (!visiveis.has(id)) estado.marcadas.delete(id);
+
   const grade = $("#grade");
   const vazio = $("#vazio");
   $("#contagem").textContent = `${total} ${total === 1 ? "desenho" : "desenhos"}`;
@@ -191,27 +218,139 @@ async function recarregar() {
     vazio.textContent = estado.filtros.busca
       ? `Nenhum desenho encontrado para "${estado.filtros.busca}".`
       : "Nenhum desenho com esses filtros.";
+    atualizarBarraLote();
     return;
   }
   vazio.hidden = true;
 
-  for (const m of itens as MatrizResumo[]) {
+  estado.itensAtuais.forEach((m, indice) => {
     const card = document.createElement("article");
-    card.className = "card" + (estado.selecionada === m.id ? " sel" : "");
+    card.className = "card" +
+      (estado.selecionada === m.id ? " sel" : "") +
+      (estado.marcadas.has(m.id) ? " marc" : "");
     const flags =
       (m.favorita ? '<span class="chip on">♥</span>' : "") +
       (m.testada ? '<span class="chip on">testada</span>' : "");
     card.innerHTML = `
+      <label class="check" title="Selecionar"><input type="checkbox" ${estado.marcadas.has(m.id) ? "checked" : ""}></label>
       <div class="thumb">${m.miniatura256 ? `<img loading="lazy" src="${thumbUrl(m.hash)}" alt="${m.nomeExibido}">` : "🧵"}</div>
       <div class="meta">
         <div class="nome" title="${m.nomeExibido}">${m.nomeExibido}</div>
         <div class="sub">${fmtMm(m.larguraMm, m.alturaMm)}</div>
         <div class="flags">${flags}</div>
       </div>`;
-    card.onclick = () => abrirDetalhes(m.id);
+
+    // A caixinha (e sua área) alterna a seleção sem abrir os detalhes
+    const check = card.querySelector<HTMLElement>(".check")!;
+    check.onclick = (ev) => {
+      ev.stopPropagation();
+      alternarMarcada(m.id, indice, ev.shiftKey);
+    };
+
+    card.onclick = (ev) => {
+      // Ctrl/Cmd+clique ou Shift+clique selecionam; clique simples abre detalhes
+      if (ev.ctrlKey || ev.metaKey || ev.shiftKey) {
+        alternarMarcada(m.id, indice, ev.shiftKey);
+      } else {
+        abrirDetalhes(m.id);
+      }
+    };
     card.ondblclick = () => api.abrirLocal(m.id);
     grade.appendChild(card);
+  });
+
+  atualizarBarraLote();
+}
+
+// ---- Seleção múltipla (lote) ---------------------------------------------
+
+function alternarMarcada(id: number, indice: number, intervalo: boolean) {
+  if (intervalo && estado.ultimoIndice != null) {
+    const [a, b] = [estado.ultimoIndice, indice].sort((x, y) => x - y);
+    // Define todos no intervalo com o mesmo estado do item clicado agora
+    const marcar = !estado.marcadas.has(id);
+    for (let i = a; i <= b; i++) {
+      const item = estado.itensAtuais[i];
+      if (!item) continue;
+      if (marcar) estado.marcadas.add(item.id);
+      else estado.marcadas.delete(item.id);
+    }
+  } else {
+    if (estado.marcadas.has(id)) estado.marcadas.delete(id);
+    else estado.marcadas.add(id);
   }
+  estado.ultimoIndice = indice;
+  atualizarGradeMarcacao();
+  atualizarBarraLote();
+}
+
+/** Atualiza só as classes/checkboxes dos cards, sem recarregar do banco. */
+function atualizarGradeMarcacao() {
+  const cards = document.querySelectorAll<HTMLElement>("#grade .card");
+  cards.forEach((card, i) => {
+    const id = estado.itensAtuais[i]?.id;
+    const marc = id != null && estado.marcadas.has(id);
+    card.classList.toggle("marc", marc);
+    const cb = card.querySelector<HTMLInputElement>(".check input");
+    if (cb) cb.checked = marc;
+  });
+}
+
+function limparSelecao() {
+  estado.marcadas.clear();
+  estado.ultimoIndice = null;
+  atualizarGradeMarcacao();
+  atualizarBarraLote();
+}
+
+function selecionarTodasVisiveis() {
+  for (const m of estado.itensAtuais) estado.marcadas.add(m.id);
+  atualizarGradeMarcacao();
+  atualizarBarraLote();
+}
+
+function atualizarBarraLote() {
+  const n = estado.marcadas.size;
+  const barra = $("#barra-lote");
+  barra.hidden = n === 0;
+  if (n === 0) return;
+  $("#lote-contagem").textContent =
+    `${n} ${n === 1 ? "desenho selecionado" : "desenhos selecionados"}`;
+}
+
+async function favoritarLote() {
+  const ids = [...estado.marcadas];
+  if (!ids.length) return;
+  for (const id of ids) await api.favoritar(id, true);
+  limparSelecao();
+  recarregar();
+}
+
+async function testarLote() {
+  const ids = [...estado.marcadas];
+  if (!ids.length) return;
+  for (const id of ids) await api.marcarTestada(id, true);
+  limparSelecao();
+  recarregar();
+}
+
+async function renomearLote() {
+  const ids = [...estado.marcadas];
+  if (!ids.length) return;
+  const base = prompt(
+    `Dar um nome ao conjunto de ${ids.length} desenho(s).\n` +
+      `Eles ficarão como "Nome 1", "Nome 2", "Nome 3"…\n\nDigite o nome base:`,
+  );
+  if (base == null) return;
+  const nome = base.trim();
+  if (!nome) return;
+  // Renomeia na ordem em que aparecem na grade
+  const ordenados = estado.itensAtuais.filter((m) => estado.marcadas.has(m.id));
+  for (let i = 0; i < ordenados.length; i++) {
+    await api.editarMatriz(ordenados[i].id, { nome_exibido: `${nome} ${i + 1}` });
+  }
+  limparSelecao();
+  recarregar();
 }
 
 // ---- Painel de detalhes ---------------------------------------------------
