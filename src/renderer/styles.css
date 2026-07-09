@@ -138,6 +138,35 @@ select { padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px;
 
 .vazio { padding: 60px 20px; text-align: center; color: var(--ink-soft); }
 
+/* Telas de manutenção (repetidos / com problema) — lista vertical */
+.grade.lista { display: block; }
+.manut {
+  display: flex; gap: 14px; align-items: flex-start;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  padding: 12px 14px; margin-bottom: 12px; box-shadow: var(--shadow);
+}
+.manut-thumb { flex: 0 0 72px; width: 72px; height: 72px; border-radius: 8px; background: var(--tile);
+  display: flex; align-items: center; justify-content: center; padding: 6px; }
+.manut-thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.manut-icone { flex: 0 0 40px; font-size: 1.6rem; text-align: center; }
+.manut.erro { border-color: color-mix(in srgb, var(--rose) 40%, var(--line)); }
+.manut-corpo { min-width: 0; flex: 1; }
+.manut-titulo { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.manut-msg { color: var(--ink-soft); font-size: .85rem; margin: 4px 0 8px; }
+.dup-lista { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
+.dup-lista li { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: .85rem; }
+.dup-arq { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.link { background: none; border: none; color: var(--rose); padding: 2px 4px; border-radius: 6px; white-space: nowrap; font-size: .82rem; }
+.link:hover { background: var(--surface-2); text-decoration: underline; }
+
+/* Etiquetas editáveis no painel de detalhes */
+.etiquetas { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 10px 0; }
+.chip.etq { display: inline-flex; align-items: center; gap: 4px; padding-right: 4px; }
+.etq-x { background: none; border: none; color: var(--ink-soft); font-size: 1rem; line-height: 1; padding: 0 2px; border-radius: 4px; }
+.etq-x:hover { color: var(--rose); background: var(--surface-2); }
+.chip.add { background: none; border: 1px dashed var(--line); color: var(--ink-soft); cursor: pointer; }
+.chip.add:hover { border-color: var(--rose); color: var(--rose); }
+
 /* Detalhes */
 .detalhes { width: 340px; border-left: 1px solid var(--line); background: var(--surface); padding: 18px; overflow-y: auto; }
 .detalhes .big { width: 100%; aspect-ratio: 1/1; background: var(--tile); border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 16px; }

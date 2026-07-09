@@ -4,6 +4,7 @@
  */
 import type {
   AppApi, MatrizResumo, FiltrosBusca, Ordenacao, PastaNode,
+  GrupoDuplicado, ErroProcessamento,
 } from "../shared/contracts.ts";
 
 declare global {
@@ -22,6 +23,7 @@ const estado = {
   ordenacao: { campo: "nome", direcao: "asc" } as Ordenacao,
   selecionada: null as number | null,
   filtroAtivo: "todos" as string,
+  modo: "biblioteca" as "biblioteca" | "duplicados" | "erros",
   expandidas: new Set<string>(),
   // Seleção múltipla (lote)
   marcadas: new Set<number>(),
@@ -143,15 +145,19 @@ async function montarNav() {
     nav.appendChild(b);
   };
 
-  const semFiltros = () => (estado.filtros = { busca: estado.filtros.busca });
+  const semFiltros = () => {
+    estado.modo = "biblioteca";
+    estado.filtros = { busca: estado.filtros.busca };
+  };
+  const comFiltro = (extra: Partial<FiltrosBusca>) => {
+    estado.modo = "biblioteca";
+    estado.filtros = { busca: estado.filtros.busca, ...extra };
+  };
 
   botao("Todos os desenhos", "todos", null, semFiltros);
-  botao("♥ Favoritas", "favoritas", null, () =>
-    (estado.filtros = { busca: estado.filtros.busca, favorita: true }));
-  botao("✓ Testadas", "testadas", null, () =>
-    (estado.filtros = { busca: estado.filtros.busca, testada: true }));
-  botao("○ Não testadas", "nao-testadas", null, () =>
-    (estado.filtros = { busca: estado.filtros.busca, testada: false }));
+  botao("♥ Favoritas", "favoritas", null, () => comFiltro({ favorita: true }));
+  botao("✓ Testadas", "testadas", null, () => comFiltro({ testada: true }));
+  botao("○ Não testadas", "nao-testadas", null, () => comFiltro({ testada: false }));
 
   if (arvore.length) {
     const g = document.createElement("div");
@@ -159,6 +165,21 @@ async function montarNav() {
     g.textContent = "Pastas";
     nav.appendChild(g);
     for (const node of arvore) renderPasta(nav, node, 0);
+  }
+
+  // Grupo de manutenção (duplicados / arquivos com problema)
+  const [dups, erros] = await Promise.all([api.listarDuplicados(), api.listarErros()]);
+  if (dups.length || erros.length) {
+    const g = document.createElement("div");
+    g.className = "grupo";
+    g.textContent = "Manutenção";
+    nav.appendChild(g);
+    if (dups.length) {
+      botao("⧉ Repetidos", "duplicados", dups.length, () => { estado.modo = "duplicados"; });
+    }
+    if (erros.length) {
+      botao("⚠ Com problema", "erros", erros.length, () => { estado.modo = "erros"; });
+    }
   }
 }
 
@@ -186,6 +207,7 @@ function renderPasta(container: HTMLElement, node: PastaNode, nivel: number) {
       return;
     }
     estado.filtroAtivo = chave;
+    estado.modo = "biblioteca";
     estado.filtros = { busca: estado.filtros.busca, subpasta: node.caminho };
     montarNav();
     recarregar();
@@ -200,6 +222,9 @@ function renderPasta(container: HTMLElement, node: PastaNode, nivel: number) {
 // ---- Grade ----------------------------------------------------------------
 
 async function recarregar() {
+  if (estado.modo === "duplicados") return renderDuplicados();
+  if (estado.modo === "erros") return renderErros();
+
   const { total, itens } = await api.listarMatrizes(estado.filtros, estado.ordenacao, {
     offset: 0, limite: 500,
   });
@@ -210,6 +235,7 @@ async function recarregar() {
 
   const grade = $("#grade");
   const vazio = $("#vazio");
+  grade.classList.remove("lista");
   $("#contagem").textContent = `${total} ${total === 1 ? "desenho" : "desenhos"}`;
   grade.innerHTML = "";
 
@@ -353,6 +379,79 @@ async function renomearLote() {
   recarregar();
 }
 
+// ---- Telas de manutenção: repetidos e com problema ------------------------
+
+const esc = (s: string) =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const nomeArquivo = (caminho: string) => caminho.split(/[\\/]/).pop() ?? caminho;
+
+async function renderDuplicados() {
+  limparSelecao();
+  $("#detalhes").hidden = true;
+  const grupos = await api.listarDuplicados();
+  const grade = $("#grade");
+  const vazio = $("#vazio");
+  const totalArq = grupos.reduce((s, g) => s + g.quantidade, 0);
+  $("#contagem").textContent =
+    `${grupos.length} desenho(s) repetido(s) — ${totalArq} arquivos idênticos`;
+  vazio.hidden = grupos.length > 0;
+  if (!grupos.length) { vazio.textContent = "Nenhum arquivo repetido. 🎉"; grade.innerHTML = ""; return; }
+
+  grade.innerHTML = "";
+  grade.classList.add("lista");
+  for (const g of grupos as GrupoDuplicado[]) {
+    const caminhos = g.caminhos.split("|");
+    const linhas = caminhos
+      .map(
+        (c) =>
+          `<li><span class="dup-arq" title="${esc(c)}">${esc(nomeArquivo(c))}</span>` +
+          `<button class="link" data-caminho="${esc(c)}">Abrir pasta</button></li>`,
+      )
+      .join("");
+    const item = document.createElement("article");
+    item.className = "manut";
+    item.innerHTML = `
+      <div class="manut-thumb"><img loading="lazy" src="${thumbUrl(g.hash)}" alt=""></div>
+      <div class="manut-corpo">
+        <div class="manut-titulo">${g.quantidade} cópias idênticas</div>
+        <ul class="dup-lista">${linhas}</ul>
+      </div>`;
+    grade.appendChild(item);
+  }
+  grade.querySelectorAll<HTMLButtonElement>("button[data-caminho]").forEach((b) => {
+    b.onclick = () => api.revelarCaminho(b.dataset.caminho!);
+  });
+}
+
+async function renderErros() {
+  limparSelecao();
+  $("#detalhes").hidden = true;
+  const erros = await api.listarErros();
+  const grade = $("#grade");
+  const vazio = $("#vazio");
+  $("#contagem").textContent = `${erros.length} arquivo(s) com problema`;
+  vazio.hidden = erros.length > 0;
+  if (!erros.length) { vazio.textContent = "Nenhum arquivo com problema. 🎉"; grade.innerHTML = ""; return; }
+
+  grade.innerHTML = "";
+  grade.classList.add("lista");
+  for (const e of erros as ErroProcessamento[]) {
+    const item = document.createElement("article");
+    item.className = "manut erro";
+    item.innerHTML = `
+      <div class="manut-icone">⚠</div>
+      <div class="manut-corpo">
+        <div class="manut-titulo" title="${esc(e.caminho)}">${esc(nomeArquivo(e.caminho))}</div>
+        <div class="manut-msg">${esc(e.mensagem)} <span class="nota">(${esc(e.etapa)})</span></div>
+        <button class="link" data-caminho="${esc(e.caminho)}">Abrir pasta</button>
+      </div>`;
+    grade.appendChild(item);
+  }
+  grade.querySelectorAll<HTMLButtonElement>("button[data-caminho]").forEach((b) => {
+    b.onclick = () => api.revelarCaminho(b.dataset.caminho!);
+  });
+}
+
 // ---- Painel de detalhes ---------------------------------------------------
 
 async function abrirDetalhes(id: number) {
@@ -363,7 +462,11 @@ async function abrirDetalhes(id: number) {
   painel.hidden = false;
 
   const etiquetas = (d.etiquetas ?? [])
-    .map((e: any) => `<span class="chip">${e.nome}</span>`)
+    .map(
+      (e: any) =>
+        `<span class="chip etq">${esc(e.nome)}` +
+        `<button class="etq-x" data-etq="${e.id}" title="Remover etiqueta">×</button></span>`,
+    )
     .join(" ");
 
   painel.innerHTML = `
@@ -377,7 +480,10 @@ async function abrirDetalhes(id: number) {
       <dt>Formato</dt><dd>${(d.formato ?? "").toUpperCase()} ${d.versaoFormato ? `(${d.versaoFormato})` : ""}</dd>
       <dt>Arquivo</dt><dd title="${d.caminhoAbsoluto}">${d.nomeOriginal}</dd>
     </dl>
-    <div class="etiquetas">${etiquetas || '<span class="nota">Sem etiquetas</span>'}</div>
+    <div class="etiquetas">
+      ${etiquetas}
+      <button id="d-add-etq" class="chip add" title="Adicionar etiqueta">+ etiqueta</button>
+    </div>
     <div class="acoes">
       <button id="d-fav" class="secundario">${d.favorita ? "♥ Favorita" : "♡ Favoritar"}</button>
       <button id="d-test" class="secundario">${d.testada ? "✓ Testada" : "Marcar testada"}</button>
@@ -406,6 +512,20 @@ async function abrirDetalhes(id: number) {
     abrirDetalhes(id);
     recarregar();
   };
+  $<HTMLButtonElement>("#d-add-etq").onclick = async () => {
+    const nome = prompt("Nova etiqueta (ex.: floral, natal, infantil):");
+    if (nome == null) return;
+    const limpo = nome.trim();
+    if (!limpo) return;
+    await api.adicionarEtiqueta(id, limpo, "geral");
+    abrirDetalhes(id);
+  };
+  painel.querySelectorAll<HTMLButtonElement>(".etq-x").forEach((b) => {
+    b.onclick = async () => {
+      await api.removerEtiqueta(id, Number(b.dataset.etq));
+      abrirDetalhes(id);
+    };
+  });
 }
 
 // ---- Cópia para pendrive --------------------------------------------------

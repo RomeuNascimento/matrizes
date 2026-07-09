@@ -110,6 +110,20 @@ export interface Drive {
   livreBytes: number | null;
   removivel: boolean;
 }
+export interface GrupoDuplicado {
+  hash: string;
+  quantidade: number;
+  /** Caminhos absolutos dos arquivos idênticos, separados por '|'. */
+  caminhos: string;
+}
+export interface ErroProcessamento {
+  id: number;
+  caminho: string;
+  etapa: string;
+  mensagem: string;
+  ocorridoEm: string;
+}
+
 export type ModoConflito = "renomear" | "pular" | "substituir";
 export interface ResultadoCopia {
   total: number;
@@ -143,9 +157,10 @@ export interface AppApi {
   listarStatus(): Promise<Status[]>;
   listarPastas(): Promise<Pasta[]>;
   listarArvorePastas(): Promise<PastaNode[]>;
-  listarDuplicados(): Promise<any[]>;
-  listarErros(): Promise<any[]>;
+  listarDuplicados(): Promise<GrupoDuplicado[]>;
+  listarErros(): Promise<ErroProcessamento[]>;
   abrirLocal(matrizId: number): Promise<void>;
+  revelarCaminho(caminho: string): Promise<void>;
   estadoInicial(): Promise<{ temBiblioteca: boolean }>;
   listarDrives(): Promise<Drive[]>;
   escolherDestino(): Promise<string | null>;

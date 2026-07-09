@@ -15,4 +15,7 @@ cache/
 *.db-wal
 *.db-shm
 
+# Miniaturas geradas pelo `npm run inspect` (diagnóstico) — nunca versionar.
+*.thumb.png
+
 # Observação: arquivos .pes de teste EM tests/fixtures/pes/ DEVEM ser versionados.

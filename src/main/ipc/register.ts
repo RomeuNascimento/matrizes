@@ -64,6 +64,10 @@ export function registrarIpc(ctx: IpcContext): void {
     if (d?.caminhoAbsoluto) shell.showItemInFolder(d.caminhoAbsoluto);
   });
 
+  ipcMain.handle("revelarCaminho", (_e, caminho: string) => {
+    if (caminho) shell.showItemInFolder(caminho);
+  });
+
   ipcMain.handle("estadoInicial", () => {
     const pastas = repo.listarPastas();
     return { temBiblioteca: pastas.length > 0 };

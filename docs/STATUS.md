@@ -28,6 +28,9 @@ passando; typecheck e build limpos.
 | **Renomear** (nome exibido, no painel de detalhes) | ✅ | `renderer/app.ts` |
 | **Seleção múltipla na grade** (caixa no card, Ctrl/Shift+clique, Ctrl+A, Esc) | ✅ | `renderer/app.ts` |
 | **Ações em lote**: favoritar, marcar testada, renomear e copiar | ✅ | barra flutuante em `renderer/app.ts` |
+| **Tela de repetidos** (agrupa idênticos por hash, abre pasta) | ✅ | `renderDuplicados` em `renderer/app.ts` |
+| **Tela de arquivos com problema** (motivo + abrir pasta) | ✅ | `renderErros` em `renderer/app.ts` |
+| **Editar etiquetas** (adicionar/remover no painel de detalhes) | ✅ | `renderer/app.ts` |
 | Favoritas / Testadas / Não testadas (lateral) | ✅ | `renderer/app.ts` |
 | Cópia segura para pendrive | ✅ | `services/copier.ts` |
 | Backup + verificação de integridade | ✅ | `db/backup.ts` |
@@ -37,9 +40,7 @@ passando; typecheck e build limpos.
 
 | Item | Estado | Observação |
 |---|---|---|
-| Tela de duplicados | 🟡 | `listarDuplicados()` pronto |
-| Tela de arquivos com erro | 🟡 | `listarErros()` pronto |
-| Categorias/etiquetas (edição) | 🟡 | CRUD parcial no repositório |
+| Categorias (organizar em pastas próprias) | 🟡 | `listarCategorias()` pronto; falta atribuir na UI |
 | Tela de configurações | ⬜ | — |
 
 ## Pendências de máquina Windows
@@ -60,10 +61,23 @@ passando; typecheck e build limpos.
 
 ## Observações a investigar
 
-- **Muitas miniaturas aparecem em preto sólido** na biblioteca real. Pode ser
-  linha escura real (comum em molduras) OU uma lacuna na leitura de cor de
-  certos arquivos/versões. Vale investigar com alguns desses arquivos: rodar
-  `npm run inspect -- "caminho\\arquivo.pes"` e comparar cor lida vs. esperada.
+- **Miniaturas pretas** — o parser e o renderizador estão corretos para a
+  amostra (v1, 37/37 com cores certas; ver `AFLORAL` renderizado). O problema
+  aparece na biblioteca real, provavelmente em arquivos **v5–v9** (que trazem
+  paleta embutida — caminho ainda não validado visualmente) ou em desenhos de
+  linha realmente escura.
+  - **Como diagnosticar** (a usuária roda no Windows, um comando por linha):
+    ```
+    npm run inspect -- "C:\\caminho\\do\\arquivo.pes"
+    ```
+    Agora o `inspect` imprime a **versão** e as **cores lidas por bloco**, avisa
+    quando **todas** as cores saem escuras (= miniatura preta) e **gera o PNG**
+    (`arquivo.thumb.png`) ao lado, para comparar com a cor real do desenho.
+  - Pedir à usuária a **versão** e as **cores** que aparecerem para um arquivo
+    que ela sabe ser colorido → isso aponta se é falha de paleta por versão.
+  - Correção de cor NÃO foi feita às cegas de propósito: o teste de paridade
+    exige igualdade exata com o oráculo PyEmbroidery; mexer sem um arquivo real
+    que reproduza o defeito arriscaria mascarar a causa.
 
 ## Como a usuária roda o app (contexto para retomar)
 
@@ -91,9 +105,12 @@ subpastas na base já existente, sem reimportar).
 
 ## Próximos passos sugeridos (para a nova sessão)
 
-1. Investigar as **miniaturas pretas** (ver Observações).
-2. Telas de **duplicados** e **erros** (backends prontos).
-3. Edição de **categorias/etiquetas** (CRUD parcial no repositório).
+1. **Miniaturas pretas**: rodar o `inspect` num arquivo real colorido que saia
+   preto e conferir versão/cores (ver Observações). É o que falta para saber se
+   há bug de paleta em alguma versão.
+2. **Categorias na UI**: permitir agrupar desenhos em categorias próprias
+   (backend `listarCategorias()`/`editarMatriz(categoria_id)` já existe).
+3. **Tela de configurações** (⬜ ainda sem backend).
 4. Quando estabilizar: **fábrica de instalador** (GitHub Actions) + auto-update.
 
 ## Como usar a seleção múltipla (para explicar à usuária)
@@ -106,6 +123,18 @@ subpastas na base já existente, sem reimportar).
   (dá um nome base e numera: "Flor 1", "Flor 2"…) e **Copiar para pendrive**.
 - Clique simples (sem tecla) continua abrindo os **detalhes**; duplo-clique
   abre o local do arquivo — nada disso mudou.
+
+## Telas de manutenção e etiquetas (para explicar à usuária)
+
+- Na lateral, quando houver, aparece o grupo **Manutenção**:
+  - **⧉ Repetidos**: agrupa arquivos idênticos (mesmo conteúdo) e mostra a
+    miniatura + a lista de cópias, com **Abrir pasta** de cada uma para você
+    decidir qual apagar (o app nunca apaga sozinho).
+  - **⚠ Com problema**: lista arquivos que não deram para ler, com o motivo e
+    **Abrir pasta** para localizar.
+- **Etiquetas**: no painel de detalhes (à direita), o botão **+ etiqueta**
+  adiciona uma marca (ex.: "floral", "natal") e o **×** em cada etiqueta a
+  remove. Servem para achar depois pela busca.
 
 ## Decisões firmadas
 
