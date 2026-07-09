@@ -18,7 +18,10 @@ permissions:
 
 jobs:
   build:
-    runs-on: windows-latest
+    # windows-2022 (Visual Studio 2022): a imagem windows-latest migrou para um
+    # Visual Studio mais novo que o node-gyp ainda não reconhece, quebrando a
+    # compilação dos módulos nativos (better-sqlite3). Fixar em 2022 resolve.
+    runs-on: windows-2022
 
     steps:
       - name: Baixar o código
