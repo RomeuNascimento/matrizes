@@ -11,6 +11,7 @@ import { registrarIpc } from "./ipc/register.ts";
 import { thumbPath, ensureThumbnail } from "./thumbnails/cache.ts";
 import { readPes } from "./embroidery/reader.ts";
 import { checarIntegridade, fazerBackup, rotacionarBackups } from "./db/backup.ts";
+import { iniciarAutoUpdate } from "./services/updater.ts";
 import type { Database as DB } from "better-sqlite3";
 
 let mainWindow: BrowserWindow | null = null;
@@ -88,6 +89,9 @@ app.whenReady().then(() => {
   registrarIpc({ repo, cacheDir, getWindow: () => mainWindow });
 
   criarJanela();
+
+  // Verifica atualizações (só no app instalado; falhas são silenciosas).
+  iniciarAutoUpdate(() => mainWindow);
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) criarJanela();

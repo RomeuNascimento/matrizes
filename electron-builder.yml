@@ -8,6 +8,12 @@ files:
   - package.json
 # Recompila módulos nativos (better-sqlite3, sharp) para a ABI do Electron.
 npmRebuild: true
+# Onde o app instalado procura novas versões (Releases públicos do GitHub).
+# Também faz o build gerar o `latest.yml`, que a atualização automática usa.
+publish:
+  provider: github
+  owner: RomeuNascimento
+  repo: matrizes
 win:
   target:
     - nsis

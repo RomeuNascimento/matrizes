@@ -1,0 +1,66 @@
+name: Instalador Windows
+
+# Gera o instalador (.exe) do Matrizes numa máquina Windows na nuvem.
+#  - Push na branch de trabalho: só compila e guarda o instalador como "artifact"
+#    (prova que o build funciona), sem publicar nada.
+#  - Push de uma tag "v..." (ex.: v0.1.0): compila E publica um Release do GitHub
+#    com o instalador + latest.yml, que é o que a atualização automática lê.
+on:
+  push:
+    branches:
+      - claude/project-progress-check-11rlq4
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar dependências
+        run: npm install --no-audit --no-fund
+
+      - name: Compilar o app
+        run: npm run build:app
+
+      # Empacota o instalador NSIS. --publish never: nunca publica direto daqui;
+      # a publicação do Release é feita no passo abaixo, só para tags.
+      # electron-builder ainda gera o latest.yml por causa da config `publish`.
+      - name: Gerar o instalador
+        run: npx electron-builder --win --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Guardar o instalador (download pela aba Actions)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Matrizes-instalador-windows
+          path: |
+            dist/*-setup.exe
+          if-no-files-found: error
+
+      - name: Publicar Release (só em tags v*)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Matrizes ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          files: |
+            dist/*-setup.exe
+            dist/*-setup.exe.blockmap
+            dist/latest.yml
+          fail_on_unmatched_files: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
