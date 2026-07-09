@@ -1,0 +1,110 @@
+import { describe, it, expect, beforeEach } from "vitest";
+import type { Database as DB } from "better-sqlite3";
+import { openDatabase } from "../../src/main/db/database.ts";
+import { LibraryRepository, type DadosImportacao } from "../../src/main/db/repository.ts";
+
+function importar(repo: LibraryRepository, pastaId: number, nome: string, hash: string): number {
+  const dados: DadosImportacao = {
+    pastaId,
+    caminhoAbsoluto: `/lib/${nome}`,
+    caminhoRelativo: nome,
+    nomeOriginal: nome,
+    extensao: "pes",
+    hash,
+    tamanhoBytes: 1000,
+    criadoEmFs: null,
+    modificadoEmFs: "2024-01-01T00:00:00Z",
+  };
+  const { matrizId, arquivoId } = repo.inserirMatrizComArquivo(dados);
+  repo.gravarMetadados(arquivoId, {
+    larguraMm: 50,
+    alturaMm: 60,
+    numPontos: 1000,
+    numCores: 3,
+    versaoFormato: "PES 1",
+    bastidorSugerido: "100x100",
+  });
+  return matrizId;
+}
+
+describe("banco + repositório", () => {
+  let db: DB;
+  let repo: LibraryRepository;
+
+  beforeEach(() => {
+    db = openDatabase(":memory:");
+    repo = new LibraryRepository(db);
+  });
+
+  it("aplica migrações e seeds", () => {
+    expect(repo.listarStatus().length).toBeGreaterThanOrEqual(7);
+    expect(repo.listarCategorias().length).toBeGreaterThanOrEqual(10);
+    expect(repo.listarEtiquetas().some((e: any) => e.dimensao === "ocasiao")).toBe(true);
+  });
+
+  it("importa e lista matrizes", () => {
+    const pasta = repo.ensurePasta("/lib");
+    importar(repo, pasta, "Coração floral.pes", "hash1");
+    const { total, itens } = repo.listarMatrizes();
+    expect(total).toBe(1);
+    expect(itens[0].nomeExibido).toBe("Coração floral");
+    expect(itens[0].larguraMm).toBe(50);
+  });
+
+  it("busca por nome ignora acentos e maiúsculas", () => {
+    const pasta = repo.ensurePasta("/lib");
+    importar(repo, pasta, "Coração.pes", "h1");
+    importar(repo, pasta, "Urso.pes", "h2");
+    expect(repo.listarMatrizes({ busca: "coracao" }).total).toBe(1);
+    expect(repo.listarMatrizes({ busca: "CORA" }).total).toBe(1);
+    expect(repo.listarMatrizes({ busca: "urso" }).total).toBe(1);
+    expect(repo.listarMatrizes({ busca: "gato" }).total).toBe(0);
+  });
+
+  it("favorita e filtra por favorita", () => {
+    const pasta = repo.ensurePasta("/lib");
+    const id = importar(repo, pasta, "a.pes", "h1");
+    importar(repo, pasta, "b.pes", "h2");
+    repo.setFavorita(id, true);
+    expect(repo.listarMatrizes({ favorita: true }).total).toBe(1);
+    expect(repo.listarMatrizes({ favorita: false }).total).toBe(1);
+  });
+
+  it("aplica etiquetas e filtra por elas (AND)", () => {
+    const pasta = repo.ensurePasta("/lib");
+    const id = importar(repo, pasta, "a.pes", "h1");
+    const natal = repo.ensureEtiqueta("Natal", "ocasiao");
+    const toalha = repo.ensureEtiqueta("toalha", "aplicacao");
+    repo.adicionarEtiqueta(id, natal);
+    repo.adicionarEtiqueta(id, toalha);
+    expect(repo.listarMatrizes({ etiquetaIds: [natal] }).total).toBe(1);
+    expect(repo.listarMatrizes({ etiquetaIds: [natal, toalha] }).total).toBe(1);
+    const outra = repo.ensureEtiqueta("Páscoa", "ocasiao");
+    expect(repo.listarMatrizes({ etiquetaIds: [natal, outra] }).total).toBe(0);
+  });
+
+  it("detecta arquivo movido pelo hash", () => {
+    const pasta = repo.ensurePasta("/lib");
+    importar(repo, pasta, "orig.pes", "hashX");
+    const encontrado = repo.findArquivoByHash("hashX");
+    expect(encontrado?.caminho_absoluto).toBe("/lib/orig.pes");
+  });
+
+  it("agrupa duplicados por hash", () => {
+    const pasta = repo.ensurePasta("/lib");
+    // dois arquivos com o mesmo conteúdo (mesmo hash), caminhos diferentes
+    repo.inserirMatrizComArquivo({
+      pastaId: pasta, caminhoAbsoluto: "/lib/x1.pes", caminhoRelativo: "x1.pes",
+      nomeOriginal: "x1.pes", extensao: "pes", hash: "dup", tamanhoBytes: 10,
+      criadoEmFs: null, modificadoEmFs: null,
+    });
+    repo.inserirMatrizComArquivo({
+      pastaId: pasta, caminhoAbsoluto: "/lib/x2.pes", caminhoRelativo: "x2.pes",
+      nomeOriginal: "x2.pes", extensao: "pes", hash: "dup", tamanhoBytes: 10,
+      criadoEmFs: null, modificadoEmFs: null,
+    });
+    const grupos = repo.listarDuplicadosPorHash();
+    expect(grupos.length).toBe(1);
+    expect(grupos[0].quantidade).toBe(2);
+  });
+});
