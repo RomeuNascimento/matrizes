@@ -25,7 +25,9 @@ passando; typecheck e build limpos.
 | Busca sem acento (FTS5) | ✅ | `repository.ts` |
 | Varredura recursiva + hash + import incremental | ✅ | `filesystem/`, `services/importer.ts` |
 | **Navegação por subpastas** (árvore recolhível) | ✅ | `repository.listarArvorePastas` + `renderer` |
-| **Renomear** (nome exibido, no painel de detalhes) | ✅ | `renderer/app.ts` |
+| **Renomear** (nome exibido; janelinha própria, não `prompt()`) | ✅ | `pedirTexto` em `renderer/app.ts` |
+| **Miniaturas com fundo claro** (desenhos escuros visíveis) | ✅ | `--fabric` em `styles.css` |
+| **Auto-cura de miniatura** (regenera cache faltante) | ✅ | protocolo `thumb://` em `index.ts` |
 | **Seleção múltipla na grade** (caixa no card, Ctrl/Shift+clique, Ctrl+A, Esc) | ✅ | `renderer/app.ts` |
 | **Ações em lote**: favoritar, marcar testada, renomear e copiar | ✅ | barra flutuante em `renderer/app.ts` |
 | **Tela de repetidos** (agrupa idênticos por hash, abre pasta) | ✅ | `renderDuplicados` em `renderer/app.ts` |
@@ -59,25 +61,24 @@ passando; typecheck e build limpos.
 - **Instalador de clique-duplo + auto-update**: objetivo final (Fase 5). Depende
   de build no Windows — planejado via GitHub Actions quando o app estabilizar.
 
-## Observações a investigar
+## Miniaturas "pretas" — RESOLVIDO (era duas coisas)
 
-- **Miniaturas pretas** — o parser e o renderizador estão corretos para a
-  amostra (v1, 37/37 com cores certas; ver `AFLORAL` renderizado). O problema
-  aparece na biblioteca real, provavelmente em arquivos **v5–v9** (que trazem
-  paleta embutida — caminho ainda não validado visualmente) ou em desenhos de
-  linha realmente escura.
-  - **Como diagnosticar** (a usuária roda no Windows, um comando por linha):
-    ```
-    npm run inspect -- "C:\\caminho\\do\\arquivo.pes"
-    ```
-    Agora o `inspect` imprime a **versão** e as **cores lidas por bloco**, avisa
-    quando **todas** as cores saem escuras (= miniatura preta) e **gera o PNG**
-    (`arquivo.thumb.png`) ao lado, para comparar com a cor real do desenho.
-  - Pedir à usuária a **versão** e as **cores** que aparecerem para um arquivo
-    que ela sabe ser colorido → isso aponta se é falha de paleta por versão.
-  - Correção de cor NÃO foi feita às cegas de propósito: o teste de paridade
-    exige igualdade exata com o oráculo PyEmbroidery; mexer sem um arquivo real
-    que reproduza o defeito arriscaria mascarar a causa.
+Diagnosticado com a biblioteca real (via `npm run inspect`):
+
+1. **Miniaturas rasgadas** (100, 101…): o PNG do cache faltava e o app mostrava
+   imagem quebrada. → Corrigido: o protocolo `thumb://` **regenera na hora** a
+   partir do original (auto-cura). ✅
+2. **Molduras pretas**: NÃO é bug. O `inspect` de uma moldura v9 mostrou
+   `Blocos cor: 1`, `Cores/bloco: #000000`, paleta embutida `#000000 #ED171F` —
+   ou seja, o arquivo diz que a linha é **preta mesmo** (conferido contra o
+   pyembroidery, que leria igual). O que atrapalhava era **preto sobre fundo
+   escuro** (sumia). → Corrigido: miniaturas agora têm **fundo claro tipo tecido**
+   (`--fabric`, claro nos dois temas), então o preto aparece como bordado em
+   pano. ✅
+
+O `inspect` foi reforçado e continua útil para outros casos: imprime versão,
+cores por bloco, **índices PEC crus**, **nº de cores da paleta embutida** e gera
+o PNG (`arquivo.thumb.png`) ao lado.
 
 ## Como a usuária roda o app (contexto para retomar)
 

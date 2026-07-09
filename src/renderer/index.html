@@ -69,6 +69,18 @@
       </div>
     </div>
 
+    <!-- Janelinha de texto (substitui prompt(), que o Electron não suporta) -->
+    <div id="modal-texto" class="modal" hidden>
+      <div class="modal-card">
+        <p id="modal-msg" class="modal-msg"></p>
+        <input id="modal-input" type="text" autocomplete="off" />
+        <div class="modal-acoes">
+          <button id="modal-cancelar" class="secundario">Cancelar</button>
+          <button id="modal-ok" class="primary">OK</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Overlay de progresso -->
     <div id="progresso" class="progresso" hidden>
       <div class="progresso-card">

@@ -13,6 +13,39 @@ declare global {
 const api = window.api;
 
 const $ = <T extends HTMLElement>(sel: string) => document.querySelector(sel) as T;
+
+/**
+ * Substituto do prompt() nativo — o Electron NÃO implementa window.prompt()
+ * (retorna null sempre). Mostra uma janelinha própria e resolve com o texto
+ * digitado, ou null se cancelar.
+ */
+function pedirTexto(mensagem: string, valorPadrao = ""): Promise<string | null> {
+  return new Promise((resolve) => {
+    const modal = $("#modal-texto");
+    const input = $<HTMLInputElement>("#modal-input");
+    const ok = $<HTMLButtonElement>("#modal-ok");
+    const cancelar = $<HTMLButtonElement>("#modal-cancelar");
+    $("#modal-msg").textContent = mensagem;
+    input.value = valorPadrao;
+    modal.hidden = false;
+    input.focus();
+    input.select();
+
+    const fechar = (valor: string | null) => {
+      modal.hidden = true;
+      ok.onclick = null;
+      cancelar.onclick = null;
+      input.onkeydown = null;
+      resolve(valor);
+    };
+    ok.onclick = () => fechar(input.value);
+    cancelar.onclick = () => fechar(null);
+    input.onkeydown = (e) => {
+      if (e.key === "Enter") fechar(input.value);
+      else if (e.key === "Escape") fechar(null);
+    };
+  });
+}
 const thumbUrl = (hash: string, size = 256) => `thumb://img/${hash}/${size}`;
 const fmtMm = (l: number | null, a: number | null) =>
   l != null && a != null ? `${l} × ${a} mm` : "—";
@@ -363,7 +396,7 @@ async function testarLote() {
 async function renomearLote() {
   const ids = [...estado.marcadas];
   if (!ids.length) return;
-  const base = prompt(
+  const base = await pedirTexto(
     `Dar um nome ao conjunto de ${ids.length} desenho(s).\n` +
       `Eles ficarão como "Nome 1", "Nome 2", "Nome 3"…\n\nDigite o nome base:`,
   );
@@ -504,7 +537,7 @@ async function abrirDetalhes(id: number) {
   $<HTMLButtonElement>("#d-abrir").onclick = () => api.abrirLocal(id);
   $<HTMLButtonElement>("#d-copiar").onclick = () => copiarParaPendrive([id]);
   $<HTMLButtonElement>("#d-renomear").onclick = async () => {
-    const novo = prompt("Novo nome do desenho:", d.nome_exibido);
+    const novo = await pedirTexto("Novo nome do desenho:", d.nome_exibido);
     if (novo == null) return;
     const nome = novo.trim();
     if (!nome || nome === d.nome_exibido) return;
@@ -513,7 +546,7 @@ async function abrirDetalhes(id: number) {
     recarregar();
   };
   $<HTMLButtonElement>("#d-add-etq").onclick = async () => {
-    const nome = prompt("Nova etiqueta (ex.: floral, natal, infantil):");
+    const nome = await pedirTexto("Nova etiqueta (ex.: floral, natal, infantil):");
     if (nome == null) return;
     const limpo = nome.trim();
     if (!limpo) return;
@@ -540,7 +573,7 @@ async function copiarParaPendrive(ids: number[]) {
     const lista = drives
       .map((d, i) => `${i + 1}. ${d.rotulo} (${d.caminho})`)
       .join("\n");
-    const escolha = prompt(`Para onde copiar ${ids.length} desenho(s)?\n${lista}\n\nDigite o número (ou cancele):`);
+    const escolha = await pedirTexto(`Para onde copiar ${ids.length} desenho(s)?\n${lista}\n\nDigite o número (ou cancele):`);
     if (escolha == null) return;
     const idx = parseInt(escolha) - 1;
     destino = drives[idx]?.caminho ?? null;
