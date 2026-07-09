@@ -12,7 +12,14 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { parsePesHeader, hexdump, PesFormatError } from "../src/main/embroidery/pes-header.ts";
 import { readPes } from "../src/main/embroidery/reader.ts";
+import { readPecBlock } from "../src/main/embroidery/pec.ts";
+import { readEmbeddedThreads } from "../src/main/embroidery/pes-versions.ts";
 import { renderThumbnailPng } from "../src/main/thumbnails/render.ts";
+
+const VERSION_BY_CODE: Record<string, number> = {
+  "0001": 1, "0020": 2, "0022": 2.2, "0030": 3, "0040": 4, "0050": 5,
+  "0055": 5.5, "0056": 5.6, "0060": 6, "0070": 7, "0080": 8, "0090": 9, "0100": 10,
+};
 
 const path = process.argv[2];
 if (!path) {
@@ -57,6 +64,22 @@ try {
   console.log(`Blocos cor  : ${d.numCores}`);
   console.log(`Cores/bloco : ${d.blocosCores.join("  ")}`);
   console.log(`Cores únicas: ${d.cores.join("  ")}`);
+
+  // Diagnóstico da ORIGEM da cor: índices brutos do PEC + paleta embutida.
+  try {
+    const h2 = parsePesHeader(buf);
+    const versaoNum = VERSION_BY_CODE[h2.version] ?? null;
+    const pec = readPecBlock(buf, h2.pecBlockOffset);
+    const embutidas = readEmbeddedThreads(buf, versaoNum);
+    console.log(`\n--- Origem da cor ---`);
+    console.log(`Índices PEC (brutos): ${pec.colorBytes.join(", ")}`);
+    console.log(`Paleta embutida lida : ${embutidas.length} cor(es)` +
+      (embutidas.length ? `  →  ${embutidas.join("  ")}` : ""));
+    if (versaoNum && versaoNum >= 5 && embutidas.length === 0) {
+      console.log(`⚠ Versão ${versaoNum} deveria ter paleta embutida, mas leu 0 →`);
+      console.log(`  a cor caiu na paleta fixa do PEC (é aqui que nasce o preto).`);
+    }
+  } catch { /* diagnóstico é best-effort */ }
 
   // Diagnóstico: cores muito escuras costumam gerar "miniatura preta".
   const escura = (hex: string) => {
