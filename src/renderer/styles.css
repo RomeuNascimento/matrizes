@@ -97,6 +97,10 @@ select { padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px;
   flex: 1; min-height: 0; overflow-y: auto; padding: 16px 20px 32px;
   display: grid; gap: 18px; align-content: start;
   grid-template-columns: repeat(auto-fill, minmax(var(--card), 1fr));
+  /* Sem isto, a grade (que tem altura fixa por causa da rolagem interna) faz as
+     linhas colapsarem em zoom maior — os cards viram tiras e o quadrado da
+     miniatura estoura/some. max-content faz cada linha seguir a altura do card. */
+  grid-auto-rows: max-content;
 }
 .card {
   background: var(--surface); border: 1px solid var(--line); border-radius: 15px;
