@@ -522,7 +522,10 @@ async function abrirDetalhes(id: number) {
       <button id="d-test" class="secundario">${d.testada ? "✓ Testada" : "Marcar testada"}</button>
     </div>
     <div class="acoes">
+      <button id="d-mover" class="secundario">Mover para outra pasta</button>
       <button id="d-abrir" class="secundario">Abrir local do arquivo</button>
+    </div>
+    <div class="acoes">
       <button id="d-copiar" class="primary">Copiar para pendrive</button>
     </div>`;
 
@@ -536,6 +539,7 @@ async function abrirDetalhes(id: number) {
   };
   $<HTMLButtonElement>("#d-abrir").onclick = () => api.abrirLocal(id);
   $<HTMLButtonElement>("#d-copiar").onclick = () => copiarParaPendrive([id]);
+  $<HTMLButtonElement>("#d-mover").onclick = () => moverArquivo(id);
   $<HTMLButtonElement>("#d-renomear").onclick = async () => {
     const novo = await pedirTexto("Novo nome do desenho:", d.nome_exibido);
     if (novo == null) return;
@@ -559,6 +563,41 @@ async function abrirDetalhes(id: number) {
       abrirDetalhes(id);
     };
   });
+}
+
+// ---- Mover arquivo para outra pasta ---------------------------------------
+
+async function moverArquivo(id: number) {
+  const ok = confirm(
+    "Isso vai MOVER o arquivo de verdade no seu computador, para outra pasta " +
+      "da sua biblioteca de bordados.\n\nO desenho continua no aplicativo, só muda de pasta. " +
+      "Deseja escolher a pasta de destino?",
+  );
+  if (!ok) return;
+
+  const r = await api.moverArquivo(id);
+  switch (r.status) {
+    case "ok":
+      await montarNav();      // as contagens das pastas mudaram
+      await recarregar();
+      abrirDetalhes(id);
+      break;
+    case "cancelado":
+    case "mesma":
+      break;
+    case "existe":
+      alert("Já existe um arquivo com esse nome nessa pasta. Nada foi movido.");
+      break;
+    case "fora":
+      alert(
+        "A pasta escolhida está fora da sua biblioteca de bordados.\n" +
+          "Escolha uma pasta (ou subpasta) de dentro dela.",
+      );
+      break;
+    case "erro":
+      alert("Não consegui mover o arquivo: " + r.mensagem);
+      break;
+  }
 }
 
 // ---- Cópia para pendrive --------------------------------------------------

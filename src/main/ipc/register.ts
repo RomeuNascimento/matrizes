@@ -3,6 +3,9 @@
  * (src/shared/contracts.ts). O renderer nunca acessa banco ou disco direto.
  */
 import { ipcMain, dialog, shell, BrowserWindow } from "electron";
+import { rename, copyFile, unlink } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { join, dirname, relative, isAbsolute } from "node:path";
 import type { LibraryRepository } from "../db/repository.ts";
 import { importarPasta } from "../services/importer.ts";
 import { copiarParaDestino, EspacoInsuficienteError } from "../services/copier.ts";
@@ -66,6 +69,49 @@ export function registrarIpc(ctx: IpcContext): void {
 
   ipcMain.handle("revelarCaminho", (_e, caminho: string) => {
     if (caminho) shell.showItemInFolder(caminho);
+  });
+
+  // Move o arquivo original para outra pasta (dentro da mesma pasta monitorada)
+  // e atualiza o banco. É a ÚNICA operação que altera os arquivos originais —
+  // sempre acionada explicitamente pela usuária, com confirmação no renderer.
+  ipcMain.handle("moverArquivo", async (_e, matrizId: number) => {
+    const info = repo.obterArquivoParaMover(matrizId);
+    if (!info) return { status: "erro", mensagem: "Arquivo não encontrado." };
+
+    const win = ctx.getWindow();
+    const res = await dialog.showOpenDialog(win!, {
+      title: "Escolha a pasta de destino (dentro da sua biblioteca)",
+      defaultPath: dirname(info.caminhoAbsoluto),
+      properties: ["openDirectory", "createDirectory"],
+    });
+    if (res.canceled || !res.filePaths.length) return { status: "cancelado" };
+
+    const destino = res.filePaths[0];
+    const novoAbs = join(destino, info.nomeOriginal);
+    const rel = relative(info.raiz, novoAbs);
+    // Precisa continuar dentro da biblioteca importada (senão sai da navegação).
+    if (rel.startsWith("..") || isAbsolute(rel)) return { status: "fora" };
+    if (novoAbs === info.caminhoAbsoluto) return { status: "mesma" };
+    if (existsSync(novoAbs)) return { status: "existe" };
+
+    try {
+      try {
+        await rename(info.caminhoAbsoluto, novoAbs);
+      } catch (e: any) {
+        // Fallback para drives/volumes diferentes (rename falha com EXDEV).
+        if (e?.code === "EXDEV") {
+          await copyFile(info.caminhoAbsoluto, novoAbs);
+          await unlink(info.caminhoAbsoluto);
+        } else {
+          throw e;
+        }
+      }
+      const novoRel = rel.replaceAll("\\", "/");
+      repo.atualizarLocalArquivo(matrizId, novoAbs, novoRel);
+      return { status: "ok", novoCaminho: novoAbs };
+    } catch (e) {
+      return { status: "erro", mensagem: (e as Error).message };
+    }
   });
 
   ipcMain.handle("estadoInicial", () => {

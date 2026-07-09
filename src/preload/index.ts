@@ -27,6 +27,7 @@ const api: AppApi = {
   listarErros: () => ipcRenderer.invoke("listarErros"),
   abrirLocal: (matrizId) => ipcRenderer.invoke("abrirLocal", matrizId),
   revelarCaminho: (caminho) => ipcRenderer.invoke("revelarCaminho", caminho),
+  moverArquivo: (matrizId) => ipcRenderer.invoke("moverArquivo", matrizId),
   estadoInicial: () => ipcRenderer.invoke("estadoInicial"),
   listarDrives: () => ipcRenderer.invoke("listarDrives"),
   escolherDestino: () => ipcRenderer.invoke("escolherDestino"),

@@ -124,6 +124,14 @@ export interface ErroProcessamento {
   ocorridoEm: string;
 }
 
+export type ResultadoMover =
+  | { status: "ok"; novoCaminho: string }
+  | { status: "cancelado" }
+  | { status: "mesma" }
+  | { status: "existe" }
+  | { status: "fora" }
+  | { status: "erro"; mensagem: string };
+
 export type ModoConflito = "renomear" | "pular" | "substituir";
 export interface ResultadoCopia {
   total: number;
@@ -161,6 +169,7 @@ export interface AppApi {
   listarErros(): Promise<ErroProcessamento[]>;
   abrirLocal(matrizId: number): Promise<void>;
   revelarCaminho(caminho: string): Promise<void>;
+  moverArquivo(matrizId: number): Promise<ResultadoMover>;
   estadoInicial(): Promise<{ temBiblioteca: boolean }>;
   listarDrives(): Promise<Drive[]>;
   escolherDestino(): Promise<string | null>;

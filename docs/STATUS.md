@@ -28,6 +28,9 @@ passando; typecheck e build limpos.
 | **Renomear** (nome exibido; janelinha própria, não `prompt()`) | ✅ | `pedirTexto` em `renderer/app.ts` |
 | **Miniaturas com fundo claro** (desenhos escuros visíveis) | ✅ | `--fabric` em `styles.css` |
 | **Auto-cura de miniatura** (regenera cache faltante) | ✅ | protocolo `thumb://` em `index.ts` |
+| **Mover arquivo para outra pasta** (organizar de dentro do app) | ✅ | `moverArquivo` (IPC + `repository`) |
+| **Painel de detalhes fixo** (não some ao rolar a grade) | ✅ | `.app { overflow:hidden }` |
+| **FTS com conteúdo** (renomear/mover não quebram a busca) | ✅ | migração 3 em `migrations.ts` |
 | **Seleção múltipla na grade** (caixa no card, Ctrl/Shift+clique, Ctrl+A, Esc) | ✅ | `renderer/app.ts` |
 | **Ações em lote**: favoritar, marcar testada, renomear e copiar | ✅ | barra flutuante em `renderer/app.ts` |
 | **Tela de repetidos** (agrupa idênticos por hash, abre pasta) | ✅ | `renderDuplicados` em `renderer/app.ts` |
@@ -144,4 +147,6 @@ subpastas na base já existente, sem reimportar).
 - Funciona **local e offline**.
 - **Subpastas** são a organização principal.
 - Segurança: modo leitura sobre os originais; escrita só no destino de cópia e
-  em `%APPDATA%\matrizes`.
+  em `%APPDATA%\matrizes`. **Exceção deliberada**: "Mover para outra pasta"
+  altera o arquivo original (move no disco) — é opt-in por ação, com confirmação,
+  e só permite destinos dentro da biblioteca importada.

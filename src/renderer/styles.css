@@ -50,7 +50,9 @@ button { font: inherit; cursor: pointer; }
 .welcome p { margin: 0; color: var(--ink-soft); }
 
 /* Layout do app */
-.app { display: grid; grid-template-columns: 248px 1fr auto; height: 100vh; }
+/* overflow:hidden garante que só as colunas internas rolem — a página inteira
+   nunca rola, então o painel de detalhes e a lateral ficam sempre à vista. */
+.app { display: grid; grid-template-columns: 248px 1fr auto; height: 100vh; overflow: hidden; }
 .sidebar {
   background: var(--surface-2); border-right: 1px solid var(--line);
   padding: 18px 14px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto;

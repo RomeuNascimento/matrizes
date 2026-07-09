@@ -172,6 +172,24 @@ export const MIGRATIONS: Migration[] = [
     // feitas no Windows guardaram "\"), habilitando a navegação por subpastas.
     sql: `UPDATE arquivos SET caminho_relativo = REPLACE(caminho_relativo, char(92), '/');`,
   },
+  {
+    version: 3,
+    name: "fts_com_conteudo",
+    // A FTS era contentless (content=''), que NÃO permite DELETE/UPDATE de uma
+    // linha existente — isso quebrava renomear e mover. Recria como FTS normal
+    // (com conteúdo) e repopula a partir dos dados atuais.
+    sql: `
+      DROP TABLE IF EXISTS matrizes_fts;
+      CREATE VIRTUAL TABLE matrizes_fts USING fts5(
+        nome, extra, tokenize='unicode61 remove_diacritics 2'
+      );
+      INSERT INTO matrizes_fts(rowid, nome, extra)
+        SELECT m.id, m.nome_exibido,
+               COALESCE((SELECT a.nome_original || ' ' || a.caminho_relativo
+                         FROM arquivos a WHERE a.matriz_id = m.id LIMIT 1), '')
+        FROM matrizes m;
+    `,
+  },
 ];
 
 /** Aplica as migrações pendentes. Idempotente. */

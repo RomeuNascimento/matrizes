@@ -536,6 +536,37 @@ export class LibraryRepository {
       .all(...ids) as any;
   }
 
+  /** Dados do arquivo + raiz da pasta monitorada (para mover no disco). */
+  obterArquivoParaMover(matrizId: number): {
+    arquivoId: number; caminhoAbsoluto: string; nomeOriginal: string; raiz: string;
+  } | undefined {
+    return this.db
+      .prepare(
+        `SELECT a.id AS arquivoId, a.caminho_absoluto AS caminhoAbsoluto,
+                a.nome_original AS nomeOriginal, p.caminho AS raiz
+         FROM arquivos a
+         JOIN pastas_monitoradas p ON p.id = a.pasta_monitorada_id
+         WHERE a.matriz_id = ?`,
+      )
+      .get(matrizId) as any;
+  }
+
+  /** Atualiza o local do arquivo após movê-lo no disco (mesma pasta monitorada). */
+  atualizarLocalArquivo(matrizId: number, novoAbs: string, novoRel: string): void {
+    const row = this.db
+      .prepare(
+        `SELECT a.nome_original AS orig, m.nome_exibido AS nome
+         FROM arquivos a JOIN matrizes m ON m.id = a.matriz_id WHERE a.matriz_id = ?`,
+      )
+      .get(matrizId) as { orig: string; nome: string } | undefined;
+    this.db
+      .prepare(
+        "UPDATE arquivos SET caminho_absoluto = ?, caminho_relativo = ? WHERE matriz_id = ?",
+      )
+      .run(novoAbs, novoRel, matrizId);
+    if (row) this.atualizarFts(matrizId, row.nome, `${row.orig} ${novoRel}`);
+  }
+
   /** Caminho absoluto de um arquivo pelo hash do conteúdo (para regenerar miniatura). */
   obterCaminhoPorHash(hash: string): string | undefined {
     const row = this.db
