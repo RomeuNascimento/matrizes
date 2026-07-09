@@ -153,6 +153,7 @@ export interface AppApi {
   adicionarEtiqueta(matrizId: number, nome: string, dimensao: string): Promise<number>;
   removerEtiqueta(matrizId: number, etiquetaId: number): Promise<void>;
   listarCategorias(): Promise<Categoria[]>;
+  criarCategoria(nome: string): Promise<Categoria>;
   listarEtiquetas(): Promise<Etiqueta[]>;
   listarStatus(): Promise<Status[]>;
   listarPastas(): Promise<Pasta[]>;

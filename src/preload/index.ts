@@ -19,6 +19,7 @@ const api: AppApi = {
   removerEtiqueta: (matrizId, etiquetaId) =>
     ipcRenderer.invoke("removerEtiqueta", matrizId, etiquetaId),
   listarCategorias: () => ipcRenderer.invoke("listarCategorias"),
+  criarCategoria: (nome) => ipcRenderer.invoke("criarCategoria", nome),
   listarEtiquetas: () => ipcRenderer.invoke("listarEtiquetas"),
   listarStatus: () => ipcRenderer.invoke("listarStatus"),
   listarPastas: () => ipcRenderer.invoke("listarPastas"),

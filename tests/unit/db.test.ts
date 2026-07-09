@@ -142,4 +142,30 @@ describe("banco + repositório", () => {
     expect(grupos.length).toBe(1);
     expect(grupos[0].quantidade).toBe(2);
   });
+
+  it("cria categoria, atribui, conta e filtra", () => {
+    const pasta = repo.ensurePasta("/lib");
+    const a = importar(repo, pasta, "Flor.pes", "c1");
+    const b = importar(repo, pasta, "Urso.pes", "c2");
+
+    // Cria e reaproveita a mesma categoria pelo nome (sem duplicar)
+    const cat = repo.criarCategoria("Batizado");
+    expect(repo.criarCategoria("Batizado").id).toBe(cat.id);
+
+    repo.editarMatriz(a, { categoria_id: cat.id });
+    repo.editarMatriz(b, { categoria_id: cat.id });
+
+    // Aparece na lista com a contagem certa
+    const naLista = repo.listarCategorias().find((c: any) => c.id === cat.id);
+    expect(naLista?.total).toBe(2);
+
+    // Filtro por categoria e nome da categoria nos detalhes
+    expect(repo.listarMatrizes({ categoriaId: cat.id }).total).toBe(2);
+    expect(repo.obterDetalhes(a).categoriaNome).toBe("Batizado");
+
+    // Tirar da categoria (categoria_id = null) reduz a contagem
+    repo.editarMatriz(a, { categoria_id: null });
+    expect(repo.listarMatrizes({ categoriaId: cat.id }).total).toBe(1);
+    expect(repo.obterDetalhes(a).categoriaNome).toBeNull();
+  });
 });

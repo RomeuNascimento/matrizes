@@ -362,7 +362,8 @@ export class LibraryRepository {
                 a.largura_mm AS larguraMm, a.altura_mm AS alturaMm, a.num_pontos AS numPontos,
                 a.num_cores AS numCores, a.versao_formato AS versaoFormato,
                 a.hash_sha256 AS hash, a.tamanho_bytes AS tamanhoBytes, a.extensao AS formato,
-                a.status_processamento AS statusProcessamento
+                a.status_processamento AS statusProcessamento,
+                (SELECT c.nome FROM categorias c WHERE c.id = m.categoria_id) AS categoriaNome
          FROM matrizes m JOIN arquivos a ON a.matriz_id = m.id WHERE m.id = ?`,
       )
       .get(matrizId);
@@ -450,6 +451,26 @@ export class LibraryRepository {
          FROM categorias c ORDER BY c.ordem, c.nome`,
       )
       .all();
+  }
+
+  /**
+   * Cria uma categoria (ou devolve a existente de mesmo nome). Só é chamada ao
+   * atribuir a um desenho, então não sobram categorias vazias.
+   */
+  criarCategoria(nome: string, paiId: number | null = null): {
+    id: number; nome: string; paiId: number | null; total: number;
+  } {
+    const existente = this.db
+      .prepare("SELECT id FROM categorias WHERE nome = ? AND pai_id IS ?")
+      .get(nome, paiId) as { id: number } | undefined;
+    const id = existente
+      ? existente.id
+      : Number(
+          this.db
+            .prepare("INSERT INTO categorias(nome, pai_id) VALUES (?, ?)")
+            .run(nome, paiId).lastInsertRowid,
+        );
+    return { id, nome, paiId, total: 0 };
   }
 
   listarEtiquetas(): any[] {

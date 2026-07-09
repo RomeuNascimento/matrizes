@@ -52,6 +52,7 @@ export function registrarIpc(ctx: IpcContext): void {
   );
 
   ipcMain.handle("listarCategorias", () => repo.listarCategorias());
+  ipcMain.handle("criarCategoria", (_e, nome: string) => repo.criarCategoria(nome));
   ipcMain.handle("listarEtiquetas", () => repo.listarEtiquetas());
   ipcMain.handle("listarStatus", () => repo.listarStatus());
   ipcMain.handle("listarPastas", () => repo.listarPastas());

@@ -177,6 +177,14 @@ select { padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px;
 .chip.add { background: none; border: 1px dashed var(--line); color: var(--ink-soft); cursor: pointer; }
 .chip.add:hover { border-color: var(--rose); color: var(--rose); }
 
+/* Categoria no painel de detalhes (uma por desenho) */
+.categoria-det { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 10px 0 2px; }
+.categoria-det .rotulo { color: var(--ink-soft); font-size: .85rem; margin-right: 2px; }
+.categoria-det .sem-cat { color: var(--ink-soft); font-size: .85rem; font-style: italic; }
+.chip.cat { display: inline-flex; align-items: center; gap: 4px; padding-right: 4px; }
+.cat-x { background: none; border: none; color: var(--ink-soft); font-size: 1rem; line-height: 1; padding: 0 2px; border-radius: 4px; cursor: pointer; }
+.cat-x:hover { color: var(--rose); background: var(--surface-2); }
+
 /* Detalhes */
 .detalhes { width: 340px; border-left: 1px solid var(--line); background: var(--surface); padding: 18px; overflow-y: auto; }
 .detalhes .big { width: 100%; aspect-ratio: 1/1; background: var(--fabric); border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 16px; }

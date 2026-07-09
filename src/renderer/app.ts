@@ -4,7 +4,7 @@
  */
 import type {
   AppApi, MatrizResumo, FiltrosBusca, Ordenacao, PastaNode,
-  GrupoDuplicado, ErroProcessamento, Etiqueta,
+  GrupoDuplicado, ErroProcessamento, Etiqueta, Categoria,
 } from "../shared/contracts.ts";
 
 declare global {
@@ -104,6 +104,7 @@ async function iniciar() {
   // Barra de ações em lote
   $<HTMLButtonElement>("#lote-fav").onclick = () => favoritarLote();
   $<HTMLButtonElement>("#lote-test").onclick = () => testarLote();
+  $<HTMLButtonElement>("#lote-categoria").onclick = () => categorizarLote();
   $<HTMLButtonElement>("#lote-renomear").onclick = () => renomearLote();
   $<HTMLButtonElement>("#lote-copiar").onclick = () => copiarParaPendrive([...estado.marcadas]);
   $<HTMLButtonElement>("#lote-limpar").onclick = () => limparSelecao();
@@ -200,10 +201,22 @@ async function montarNav() {
     for (const node of arvore) renderPasta(nav, node, 0);
   }
 
-  // Grupo de etiquetas em uso (organização por marcas próprias da usuária)
-  const [dups, erros, etiquetas] = await Promise.all([
-    api.listarDuplicados(), api.listarErros(), api.listarEtiquetas(),
+  // Grupos de organização própria da usuária: categorias e etiquetas
+  const [dups, erros, etiquetas, categorias] = await Promise.all([
+    api.listarDuplicados(), api.listarErros(), api.listarEtiquetas(), api.listarCategorias(),
   ]);
+
+  const catsUsadas = (categorias as Categoria[]).filter((c) => c.total > 0);
+  if (catsUsadas.length) {
+    const g = document.createElement("div");
+    g.className = "grupo";
+    g.textContent = "Categorias";
+    nav.appendChild(g);
+    for (const c of catsUsadas) {
+      botao(`📁 ${c.nome}`, `cat-${c.id}`, c.total, () => comFiltro({ categoriaId: c.id }));
+    }
+  }
+
   const tagsUsadas = (etiquetas as Etiqueta[]).filter((e) => e.total > 0);
   if (tagsUsadas.length) {
     const g = document.createElement("div");
@@ -426,6 +439,22 @@ async function renomearLote() {
   recarregar();
 }
 
+async function categorizarLote() {
+  const ids = [...estado.marcadas];
+  if (!ids.length) return;
+  const nome = await pedirTexto(
+    `Colocar ${ids.length} desenho(s) numa categoria (nova ou existente):`,
+  );
+  if (nome == null) return;
+  const limpo = nome.trim();
+  if (!limpo) return;
+  const cat = await api.criarCategoria(limpo);
+  for (const id of ids) await api.editarMatriz(id, { categoria_id: cat.id });
+  limparSelecao();
+  montarNav();
+  recarregar();
+}
+
 // ---- Telas de manutenção: repetidos e com problema ------------------------
 
 const esc = (s: string) =>
@@ -527,6 +556,14 @@ async function abrirDetalhes(id: number) {
       <dt>Formato</dt><dd>${(d.formato ?? "").toUpperCase()} ${d.versaoFormato ? `(${d.versaoFormato})` : ""}</dd>
       <dt>Arquivo</dt><dd title="${d.caminhoAbsoluto}">${d.nomeOriginal}</dd>
     </dl>
+    <div class="categoria-det">
+      <span class="rotulo">Categoria:</span>
+      ${d.categoriaNome
+        ? `<span class="chip cat">📁 ${esc(d.categoriaNome)}` +
+          `<button class="cat-x" title="Tirar da categoria">×</button></span>`
+        : `<span class="sem-cat">nenhuma</span>`}
+      <button id="d-cat" class="chip add" title="Definir categoria">${d.categoriaNome ? "trocar" : "+ categoria"}</button>
+    </div>
     <div class="etiquetas">
       ${etiquetas}
       <button id="d-add-etq" class="chip add" title="Adicionar etiqueta">+ etiqueta</button>
@@ -573,6 +610,25 @@ async function abrirDetalhes(id: number) {
       abrirDetalhes(id);
     };
   });
+  $<HTMLButtonElement>("#d-cat").onclick = async () => {
+    const nome = await pedirTexto(
+      "Categoria (nova ou existente) — ex.: Batizado, Natal, Meus preferidos:",
+      d.categoriaNome ?? "",
+    );
+    if (nome == null) return;
+    const limpo = nome.trim();
+    if (!limpo) return;
+    const cat = await api.criarCategoria(limpo);
+    await api.editarMatriz(id, { categoria_id: cat.id });
+    abrirDetalhes(id); montarNav(); recarregar();
+  };
+  const catX = painel.querySelector<HTMLButtonElement>(".cat-x");
+  if (catX) {
+    catX.onclick = async () => {
+      await api.editarMatriz(id, { categoria_id: null });
+      abrirDetalhes(id); montarNav(); recarregar();
+    };
+  }
 }
 
 // ---- Cópia para pendrive --------------------------------------------------

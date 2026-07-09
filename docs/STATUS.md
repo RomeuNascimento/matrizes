@@ -44,8 +44,18 @@ passando; typecheck e build limpos.
 
 | Item | Estado | Observação |
 |---|---|---|
-| Categorias (organizar em pastas próprias) | 🟡 | `listarCategorias()` pronto; falta atribuir na UI |
+| Categorias (organizar em pastas próprias) | ✅ | `criarCategoria()` + atribuir no detalhe e em lote; grupo "Categorias" na lateral filtra |
 | Tela de configurações | ⬜ | — |
+
+## Distribuição (Fase 5) — ✅ no ar
+
+- **Instalador Windows automático**: GitHub Actions (`.github/workflows/build-windows.yml`,
+  `windows-2022`) compila e publica um Release a cada commit com `[release]`; a versão vem
+  do `package.json`. Gera instalador `.exe` **e** versão portátil `.zip`.
+- **Atualização automática** (`electron-updater`, Releases públicos): o app instalado
+  verifica e baixa sozinho; instala ao clicar "Reiniciar agora". Sem SmartScreen nas
+  atualizações (só na 1ª instalação). Validado ponta a ponta pela usuária (v0.1.0 → v0.1.2).
+- Correção da grade: `grid-auto-rows: max-content` (cards não achatam/cortam em zoom maior).
 
 ## Pendências de máquina Windows
 
