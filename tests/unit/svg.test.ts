@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { designToSvg } from "../../src/thumbnails/svg.ts";
-import { STITCH, JUMP, COLOR_CHANGE, END } from "../../src/embroidery/pec.ts";
-import type { DesignData } from "../../src/embroidery/reader.ts";
+import { designToSvg } from "../../src/main/thumbnails/svg.ts";
+import { STITCH, JUMP, COLOR_CHANGE, END } from "../../src/main/embroidery/pec.ts";
+import type { DesignData } from "../../src/main/embroidery/reader.ts";
 
 function design(pontos: DesignData["pontos"], blocosCores: string[]): DesignData {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;

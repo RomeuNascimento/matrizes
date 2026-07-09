@@ -10,7 +10,7 @@
  */
 import { readFileSync } from "node:fs";
 import { basename } from "node:path";
-import { parsePesHeader, hexdump, PesFormatError } from "../src/embroidery/pes-header.ts";
+import { parsePesHeader, hexdump, PesFormatError } from "../src/main/embroidery/pes-header.ts";
 
 const path = process.argv[2];
 if (!path) {

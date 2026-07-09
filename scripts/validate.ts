@@ -7,7 +7,7 @@
 import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { readPes } from "../src/embroidery/reader.ts";
+import { readPes } from "../src/main/embroidery/reader.ts";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const refPath = join(root, "docs/amostras/metadata-alfabeto-floral.json");

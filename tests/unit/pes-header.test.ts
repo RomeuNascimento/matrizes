@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parsePesHeader, PesFormatError, hexdump } from "../../src/embroidery/pes-header.ts";
+import { parsePesHeader, PesFormatError, hexdump } from "../../src/main/embroidery/pes-header.ts";
 
 /** Monta um cabeçalho PES sintético só para testar o parser do cabeçalho. */
 function craftPesHeader(version: string, pecOffset: number, totalSize = 128): Buffer {

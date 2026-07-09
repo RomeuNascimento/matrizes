@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { readPes } from "../../src/embroidery/reader.ts";
+import { readPes } from "../../src/main/embroidery/reader.ts";
 
 /**
  * Validação de paridade: o leitor de PES em TypeScript deve reproduzir

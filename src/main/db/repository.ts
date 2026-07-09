@@ -172,6 +172,21 @@ export class LibraryRepository {
       );
   }
 
+  /** Atualiza hash/tamanho/mtime de um arquivo cujo conteúdo mudou. */
+  atualizarConteudoArquivo(
+    arquivoId: number,
+    hash: string,
+    tamanhoBytes: number,
+    modificadoEmFs: string | null,
+  ): void {
+    this.db
+      .prepare(
+        `UPDATE arquivos SET hash_sha256 = ?, tamanho_bytes = ?, modificado_em_fs = ?,
+           status_processamento = 'pendente' WHERE id = ?`,
+      )
+      .run(hash, tamanhoBytes, modificadoEmFs, arquivoId);
+  }
+
   /** Grava os metadados analisados e marca o arquivo como 'ok'. */
   gravarMetadados(arquivoId: number, meta: MetadadosDesenho): void {
     const now = new Date().toISOString();
