@@ -16,8 +16,13 @@ publish:
   repo: matrizes
 win:
   target:
+    # nsis  = instalador de clique-duplo (.exe)
+    # zip   = versão "sem instalação": descompacta e abre Matrizes.exe. Costuma
+    #         passar mais fácil pelo SmartScreen por não ser um instalador.
     - nsis
-  artifactName: ${productName}-${version}-setup.${ext}
+    - zip
+  # Instalador vira Matrizes-0.1.x.exe; a versão sem-instalação, Matrizes-0.1.x.zip.
+  artifactName: ${productName}-${version}.${ext}
 nsis:
   oneClick: false
   perMachine: false

@@ -48,12 +48,13 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Guardar o instalador (download pela aba Actions)
+      - name: Guardar os arquivos (download pela aba Actions)
         uses: actions/upload-artifact@v4
         with:
-          name: Matrizes-instalador-windows
+          name: Matrizes-windows
           path: |
-            dist/*-setup.exe
+            dist/*.exe
+            dist/*.zip
           if-no-files-found: error
 
       # Lê a versão do package.json para nomear a tag/Release (ex.: v0.1.0).
@@ -70,8 +71,9 @@ jobs:
           tag_name: ${{ steps.versao.outputs.tag }}
           target_commitish: ${{ github.sha }}
           files: |
-            dist/*-setup.exe
-            dist/*-setup.exe.blockmap
+            dist/*.exe
+            dist/*.exe.blockmap
+            dist/*.zip
             dist/latest.yml
           fail_on_unmatched_files: false
         env:
