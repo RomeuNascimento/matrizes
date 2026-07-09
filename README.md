@@ -8,25 +8,66 @@ de matrizes de bordado computadorizado (foco em arquivos `.PES`).
 
 ## Estado atual
 
-Início do desenvolvimento. Estamos na **Fase 1 — prova técnica de leitura de
-PES**, que é o item de maior risco do projeto.
+O núcleo do MVP está implementado e testado ponta a ponta:
 
-- 📄 Planejamento completo: [`PLANEJAMENTO_TECNICO.md`](./PLANEJAMENTO_TECNICO.md)
-- 🧩 Leitor de PES (em construção): [`src/embroidery/`](./src/embroidery/)
-- 🔬 Ferramenta de inspeção: [`scripts/inspect.ts`](./scripts/inspect.ts)
-- 📥 Onde enviar arquivos de teste: [`tests/fixtures/pes/README.md`](./tests/fixtures/pes/README.md)
+- ✅ **Leitor de PES** próprio em TypeScript — paridade exata com o oráculo
+  (PyEmbroidery) nos 37 arquivos reais, incluindo PES v1–v6 e paleta embutida.
+- ✅ **Miniaturas** renderizadas em TS (SVG → PNG via `sharp`), nas cores reais das linhas.
+- ✅ **Banco SQLite** com esquema completo, migrações, seeds e busca sem acento (FTS5).
+- ✅ **Varredura + hash + importação** incremental, com miniaturas em cache por hash.
+- ✅ **App Electron**: galeria, busca, filtros, painel de detalhes, favoritar/testada,
+  abrir local do arquivo, barra de progresso.
 
-## Rodando localmente
+Detalhes e decisões: [`PLANEJAMENTO_TECNICO.md`](./PLANEJAMENTO_TECNICO.md) ·
+Prova técnica: [`docs/FASE1-leitura-pes.md`](./docs/FASE1-leitura-pes.md).
+
+## Estrutura
+
+```
+src/
+  main/           processo principal (Node)
+    embroidery/   leitor de PES/PEC + paleta
+    thumbnails/   SVG -> PNG + cache
+    db/           SQLite: migrações, seeds, repositório
+    filesystem/   varredura, hash, caminhos longos
+    services/     importador, bastidores
+    ipc/          handlers de IPC
+    index.ts      ciclo de vida, janela, protocolo thumb://
+  preload/        window.api (contextBridge)
+  renderer/       interface (HTML/CSS/TS)
+  shared/         contratos backend <-> renderer
+tests/            unitários + integração + fixtures (.PES reais)
+scripts/          inspeção, validação, oráculo (Python), galeria
+```
+
+## Desenvolvimento
 
 ```bash
 npm install
-npm test              # testes unitários (vitest)
+npm test              # 55+ testes (parser, banco, pipeline)
 npm run typecheck     # checagem de tipos
-npm run inspect -- caminho/para/um-arquivo.pes   # inspeciona um .PES real
+npm run validate      # compara o leitor TS com o oráculo, arquivo a arquivo
+npm run dev           # abre o app em modo desenvolvimento (requer ambiente gráfico)
 ```
 
-## Stack
+> **Módulos nativos:** `better-sqlite3` e `sharp` precisam ser compilados para a
+> ABI do Electron ao rodar o app. Rode `npm run rebuild` após instalar (usa
+> `@electron/rebuild`). Ao empacotar, o `electron-builder` já cuida disso.
 
-Electron + TypeScript + SQLite (ver seção "Arquitetura recomendada" do
-planejamento). Nesta fase inicial rodamos apenas o núcleo em Node/TypeScript,
-sem Electron, para provar a leitura dos arquivos antes de montar a interface.
+## Empacotamento (Windows)
+
+```bash
+npm i -D electron-builder @electron/rebuild   # se ainda não instalados
+npm run dist                                   # gera o instalador NSIS em dist/
+```
+
+## Ferramentas de referência (Python)
+
+O PyEmbroidery é usado **apenas** como oráculo de validação (não faz parte do
+app distribuído):
+
+```bash
+python3 -m venv .venv-oracle
+.venv-oracle/bin/pip install -r tests/oracle/requirements.txt
+.venv-oracle/bin/python scripts/oracle_report.py tests/fixtures/pes/alfabeto-floral saida/
+```

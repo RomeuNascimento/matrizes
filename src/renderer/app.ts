@@ -213,7 +213,8 @@ async function abrirDetalhes(id: number) {
       <button id="d-test" class="secundario">${d.testada ? "✓ Testada" : "Marcar testada"}</button>
     </div>
     <div class="acoes">
-      <button id="d-abrir" class="primary">Abrir local do arquivo</button>
+      <button id="d-abrir" class="secundario">Abrir local do arquivo</button>
+      <button id="d-copiar" class="primary">Copiar para pendrive</button>
     </div>`;
 
   $<HTMLButtonElement>("#d-fav").onclick = async () => {
@@ -225,6 +226,39 @@ async function abrirDetalhes(id: number) {
     abrirDetalhes(id); recarregar();
   };
   $<HTMLButtonElement>("#d-abrir").onclick = () => api.abrirLocal(id);
+  $<HTMLButtonElement>("#d-copiar").onclick = () => copiarParaPendrive([id]);
+}
+
+// ---- Cópia para pendrive --------------------------------------------------
+
+async function copiarParaPendrive(ids: number[]) {
+  const drives = await api.listarDrives();
+  let destino: string | null;
+  if (drives.length === 0) {
+    if (!confirm("Nenhum pendrive encontrado. Deseja escolher outra pasta de destino?")) return;
+    destino = await api.escolherDestino();
+  } else {
+    const lista = drives
+      .map((d, i) => `${i + 1}. ${d.rotulo} (${d.caminho})`)
+      .join("\n");
+    const escolha = prompt(`Para onde copiar ${ids.length} desenho(s)?\n${lista}\n\nDigite o número (ou cancele):`);
+    if (escolha == null) return;
+    const idx = parseInt(escolha) - 1;
+    destino = drives[idx]?.caminho ?? null;
+  }
+  if (!destino) return;
+
+  const resp = await api.copiarParaPendrive(ids, destino, "renomear");
+  if (!resp.ok) {
+    alert(resp.erro.mensagem);
+    return;
+  }
+  const r = resp.resultado;
+  alert(
+    `✅ ${r.copiados + r.renomeados} copiado(s) para ${destino}` +
+      (r.pulados ? `\n${r.pulados} já existia(m) (pulado).` : "") +
+      (r.erros ? `\n${r.erros} com erro.` : ""),
+  );
 }
 
 iniciar();

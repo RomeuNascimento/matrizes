@@ -96,6 +96,24 @@ export interface Pasta {
   ativa: number;
   total: number;
 }
+export interface Drive {
+  caminho: string;
+  rotulo: string;
+  livreBytes: number | null;
+  removivel: boolean;
+}
+export type ModoConflito = "renomear" | "pular" | "substituir";
+export interface ResultadoCopia {
+  total: number;
+  copiados: number;
+  renomeados: number;
+  pulados: number;
+  erros: number;
+  itens: any[];
+}
+export type RespostaCopia =
+  | { ok: true; resultado: ResultadoCopia }
+  | { ok: false; erro: { codigo: string; mensagem: string } };
 
 /** Superfície exposta em window.api (via contextBridge). */
 export interface AppApi {
@@ -120,5 +138,13 @@ export interface AppApi {
   listarErros(): Promise<any[]>;
   abrirLocal(matrizId: number): Promise<void>;
   estadoInicial(): Promise<{ temBiblioteca: boolean }>;
+  listarDrives(): Promise<Drive[]>;
+  escolherDestino(): Promise<string | null>;
+  copiarParaPendrive(
+    matrizIds: number[],
+    destino: string,
+    conflito: ModoConflito,
+  ): Promise<RespostaCopia>;
   onProgresso(cb: (p: ProgressoImportacao) => void): () => void;
+  onCopiaProgresso(cb: (p: { total: number; copiados: number; arquivoAtual: string }) => void): () => void;
 }

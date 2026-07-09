@@ -1,0 +1,20 @@
+appId: com.matrizes.app
+productName: Matrizes
+directories:
+  output: dist
+  buildResources: build
+files:
+  - out/**
+  - package.json
+# Recompila módulos nativos (better-sqlite3, sharp) para a ABI do Electron.
+npmRebuild: true
+win:
+  target:
+    - nsis
+  artifactName: ${productName}-${version}-setup.${ext}
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  # NUNCA remover dados da usuária ao desinstalar.
+  deleteAppDataOnUninstall: false

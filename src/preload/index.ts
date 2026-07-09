@@ -26,10 +26,19 @@ const api: AppApi = {
   listarErros: () => ipcRenderer.invoke("listarErros"),
   abrirLocal: (matrizId) => ipcRenderer.invoke("abrirLocal", matrizId),
   estadoInicial: () => ipcRenderer.invoke("estadoInicial"),
+  listarDrives: () => ipcRenderer.invoke("listarDrives"),
+  escolherDestino: () => ipcRenderer.invoke("escolherDestino"),
+  copiarParaPendrive: (matrizIds, destino, conflito) =>
+    ipcRenderer.invoke("copiarParaPendrive", matrizIds, destino, conflito),
   onProgresso: (cb) => {
     const listener = (_e: unknown, p: any) => cb(p);
     ipcRenderer.on("importacao:progresso", listener);
     return () => ipcRenderer.removeListener("importacao:progresso", listener);
+  },
+  onCopiaProgresso: (cb) => {
+    const listener = (_e: unknown, p: any) => cb(p);
+    ipcRenderer.on("copia:progresso", listener);
+    return () => ipcRenderer.removeListener("copia:progresso", listener);
   },
 };
 

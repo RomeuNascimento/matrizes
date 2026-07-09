@@ -461,6 +461,31 @@ export class LibraryRepository {
       .all();
   }
 
+  // ---- Cópia --------------------------------------------------------------
+
+  obterArquivosPorMatrizes(ids: number[]): Array<{
+    matrizId: number;
+    caminhoAbsoluto: string;
+    nomeOriginal: string;
+    hash: string;
+    tamanhoBytes: number;
+    larguraMm: number | null;
+    alturaMm: number | null;
+  }> {
+    if (!ids.length) return [];
+    const placeholders = ids.map(() => "?").join(",");
+    return this.db
+      .prepare(
+        `SELECT m.id AS matrizId, a.caminho_absoluto AS caminhoAbsoluto,
+                a.nome_original AS nomeOriginal, a.hash_sha256 AS hash,
+                a.tamanho_bytes AS tamanhoBytes, a.largura_mm AS larguraMm,
+                a.altura_mm AS alturaMm
+         FROM matrizes m JOIN arquivos a ON a.matriz_id = m.id
+         WHERE m.id IN (${placeholders})`,
+      )
+      .all(...ids) as any;
+  }
+
   // ---- Duplicados / erros ------------------------------------------------
 
   listarDuplicadosPorHash(): any[] {

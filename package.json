@@ -9,6 +9,8 @@
     "dev": "electron-vite dev",
     "build:app": "electron-vite build",
     "start": "electron-vite preview",
+    "rebuild": "electron-rebuild -f -w better-sqlite3,sharp",
+    "dist": "electron-vite build && electron-builder",
     "inspect": "tsx scripts/inspect.ts",
     "validate": "tsx scripts/validate.ts",
     "test": "vitest run",

@@ -5,6 +5,8 @@
 import { ipcMain, dialog, shell, BrowserWindow } from "electron";
 import type { LibraryRepository } from "../db/repository.ts";
 import { importarPasta } from "../services/importer.ts";
+import { copiarParaDestino, EspacoInsuficienteError } from "../services/copier.ts";
+import { listarDrivesRemoviveis } from "../filesystem/drives.ts";
 
 export interface IpcContext {
   repo: LibraryRepository;
@@ -65,4 +67,34 @@ export function registrarIpc(ctx: IpcContext): void {
     const pastas = repo.listarPastas();
     return { temBiblioteca: pastas.length > 0 };
   });
+
+  // ---- Cópia para pendrive ----
+  ipcMain.handle("listarDrives", () => listarDrivesRemoviveis());
+
+  ipcMain.handle("escolherDestino", async () => {
+    const win = ctx.getWindow();
+    const res = await dialog.showOpenDialog(win!, {
+      title: "Escolha onde copiar",
+      properties: ["openDirectory", "createDirectory"],
+    });
+    return res.canceled || !res.filePaths.length ? null : res.filePaths[0];
+  });
+
+  ipcMain.handle(
+    "copiarParaPendrive",
+    async (_e, matrizIds: number[], destino: string, conflito) => {
+      try {
+        const r = await copiarParaDestino(repo, matrizIds, destino, {
+          conflito,
+          onProgresso: (p) => ctx.getWindow()?.webContents.send("copia:progresso", p),
+        });
+        return { ok: true, resultado: r };
+      } catch (e) {
+        if (e instanceof EspacoInsuficienteError) {
+          return { ok: false, erro: { codigo: "espaco", mensagem: e.message } };
+        }
+        return { ok: false, erro: { codigo: "falha", mensagem: (e as Error).message } };
+      }
+    },
+  );
 }
