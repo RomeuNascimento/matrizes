@@ -1,0 +1,127 @@
+:root {
+  --ground: #e7e2d6;
+  --surface: #fbf9f4;
+  --surface-2: #f1ede3;
+  --ink: #2c352a;
+  --ink-soft: #5e6656;
+  --line: #d8d2c4;
+  --rose: #c0356f;
+  --sage: #6e8b4e;
+  --tile: #f6f2e9;
+  --shadow: 0 1px 2px rgba(44, 53, 42, 0.06), 0 8px 24px rgba(44, 53, 42, 0.07);
+  --card: 220px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #171a14; --surface: #20241c; --surface-2: #181c15;
+    --ink: #ece7da; --ink-soft: #a7ac98; --line: #333829;
+    --rose: #e877a6; --sage: #a6c486; --tile: #252a1e;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+  }
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--ground); color: var(--ink);
+  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; cursor: pointer; }
+.primary, button.primary {
+  background: var(--rose); color: #fff; border: none; border-radius: 11px;
+  padding: 12px 20px; font-weight: 600;
+}
+.primary.grande { padding: 16px 28px; font-size: 1.05rem; }
+.secundario {
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line);
+  border-radius: 10px; padding: 10px 14px;
+}
+.nota { color: var(--ink-soft); font-size: .85rem; }
+
+/* Boas-vindas */
+.welcome { display: grid; place-items: center; height: 100vh; padding: 24px; }
+.welcome-card { text-align: center; max-width: 520px; display: grid; gap: 14px; justify-items: center; }
+.welcome-flor { font-size: 56px; }
+.welcome h1 { font-family: "Iowan Old Style", Palatino, Georgia, serif; font-size: 2rem; margin: 0; text-wrap: balance; }
+.welcome p { margin: 0; color: var(--ink-soft); }
+
+/* Layout do app */
+.app { display: grid; grid-template-columns: 248px 1fr auto; height: 100vh; }
+.sidebar {
+  background: var(--surface-2); border-right: 1px solid var(--line);
+  padding: 18px 14px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto;
+}
+.marca { font-family: "Iowan Old Style", Palatino, Georgia, serif; font-size: 1.3rem; font-weight: 600; }
+.marca-flor { margin-right: 4px; }
+.nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.nav .grupo { font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-soft); margin: 12px 6px 4px; }
+.nav button {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  background: none; border: none; border-radius: 8px; padding: 8px 10px;
+  color: var(--ink); text-align: left; width: 100%;
+}
+.nav button:hover { background: var(--surface); }
+.nav button.ativo { background: var(--rose); color: #fff; }
+.nav button .cont { font-size: .78rem; opacity: .7; font-variant-numeric: tabular-nums; }
+.nav button.ativo .cont { opacity: .9; }
+
+.conteudo { display: flex; flex-direction: column; min-width: 0; }
+.topo { display: flex; gap: 12px; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+.busca { position: relative; flex: 1; }
+.busca input {
+  width: 100%; padding: 11px 14px 11px 40px; border: 1px solid var(--line);
+  border-radius: 10px; background: var(--surface); color: var(--ink); font-size: 1rem;
+}
+.busca input:focus { outline: 2px solid var(--rose); outline-offset: 1px; border-color: transparent; }
+.busca svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+  width: 17px; height: 17px; fill: none; stroke: var(--ink-soft); stroke-width: 2; stroke-linecap: round; }
+select { padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); }
+.zoom { display: flex; gap: 4px; }
+.zoom button { width: 38px; height: 38px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); font-size: 1.2rem; }
+
+.contagem { padding: 12px 20px 0; color: var(--ink-soft); font-size: .85rem; }
+.grade {
+  flex: 1; overflow-y: auto; padding: 16px 20px 32px;
+  display: grid; gap: 18px; align-content: start;
+  grid-template-columns: repeat(auto-fill, minmax(var(--card), 1fr));
+}
+.card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 15px;
+  overflow: hidden; box-shadow: var(--shadow); cursor: pointer;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.card:hover { transform: translateY(-3px); }
+.card.sel { outline: 2px solid var(--rose); }
+.card .thumb {
+  aspect-ratio: 1/1; background: radial-gradient(circle at 50% 40%, var(--surface-2), var(--tile));
+  display: flex; align-items: center; justify-content: center; padding: 12px;
+}
+.card .thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.card .meta { padding: 10px 12px 12px; }
+.card .nome { font-weight: 600; font-size: .95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card .sub { color: var(--ink-soft); font-size: .8rem; font-variant-numeric: tabular-nums; display: flex; gap: 6px; align-items: center; }
+.card .flags { margin-top: 6px; display: flex; gap: 6px; font-size: .75rem; }
+.chip { background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; }
+.chip.on { background: var(--rose); color: #fff; border-color: transparent; }
+
+.vazio { padding: 60px 20px; text-align: center; color: var(--ink-soft); }
+
+/* Detalhes */
+.detalhes { width: 340px; border-left: 1px solid var(--line); background: var(--surface); padding: 18px; overflow-y: auto; }
+.detalhes .big { width: 100%; aspect-ratio: 1/1; background: var(--tile); border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.detalhes .big img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.detalhes h2 { margin: 14px 0 4px; font-size: 1.2rem; }
+.detalhes dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 12px 0; font-size: .88rem; }
+.detalhes dt { color: var(--ink-soft); }
+.detalhes dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.detalhes .acoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.detalhes .acoes button { flex: 1 1 auto; }
+.swatch { display: inline-block; width: 13px; height: 13px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0,0,0,.15); vertical-align: middle; }
+
+/* Progresso */
+.progresso { position: fixed; inset: 0; background: rgba(20,22,18,.55); display: grid; place-items: center; }
+.progresso-card { background: var(--surface); border-radius: 16px; padding: 26px; width: min(440px, 90vw); box-shadow: var(--shadow); text-align: center; }
+.barra { height: 10px; background: var(--surface-2); border-radius: 999px; overflow: hidden; margin: 14px 0 10px; }
+.barra-preench { height: 100%; width: 0; background: var(--rose); transition: width .2s ease; }
+.prog-texto { font-variant-numeric: tabular-nums; color: var(--ink-soft); font-size: .9rem; }
+[hidden] { display: none !important; }

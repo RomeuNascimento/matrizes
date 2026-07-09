@@ -1,0 +1,230 @@
+/**
+ * Lógica da interface. Fala apenas com window.api (contratos), nunca com o
+ * sistema diretamente.
+ */
+import type {
+  AppApi, MatrizResumo, FiltrosBusca, Ordenacao, Categoria, Status,
+} from "../shared/contracts.ts";
+
+declare global {
+  interface Window { api: AppApi; }
+}
+const api = window.api;
+
+const $ = <T extends HTMLElement>(sel: string) => document.querySelector(sel) as T;
+const thumbUrl = (hash: string, size = 256) => `thumb://img/${hash}/${size}`;
+const fmtMm = (l: number | null, a: number | null) =>
+  l != null && a != null ? `${l} × ${a} mm` : "—";
+const fmtNum = (n: number | null) => (n == null ? "—" : n.toLocaleString("pt-BR"));
+
+const estado = {
+  filtros: {} as FiltrosBusca,
+  ordenacao: { campo: "nome", direcao: "asc" } as Ordenacao,
+  selecionada: null as number | null,
+  filtroAtivo: "todos" as string,
+};
+
+// ---- Inicialização --------------------------------------------------------
+
+async function iniciar() {
+  const { temBiblioteca } = await api.estadoInicial();
+  if (temBiblioteca) {
+    mostrarApp();
+  } else {
+    $("#welcome").hidden = false;
+  }
+
+  $<HTMLButtonElement>("#btn-escolher").onclick = escolherEImportar;
+  $<HTMLButtonElement>("#btn-add-pasta").onclick = escolherEImportar;
+
+  const busca = $<HTMLInputElement>("#busca");
+  let t: ReturnType<typeof setTimeout>;
+  busca.addEventListener("input", () => {
+    clearTimeout(t);
+    t = setTimeout(() => {
+      estado.filtros.busca = busca.value;
+      recarregar();
+    }, 200);
+  });
+
+  $<HTMLSelectElement>("#ordenar").addEventListener("change", (e) => {
+    estado.ordenacao.campo = (e.target as HTMLSelectElement).value as Ordenacao["campo"];
+    estado.ordenacao.direcao = estado.ordenacao.campo === "nome" ? "asc" : "desc";
+    recarregar();
+  });
+
+  document.querySelectorAll<HTMLButtonElement>(".zoom button").forEach((b) => {
+    b.onclick = () => {
+      const atual = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--card"));
+      const novo = b.dataset.zoom === "g" ? Math.min(atual + 40, 340) : Math.max(atual - 40, 140);
+      document.documentElement.style.setProperty("--card", `${novo}px`);
+    };
+  });
+
+  api.onProgresso(atualizarProgresso);
+}
+
+async function mostrarApp() {
+  $("#welcome").hidden = true;
+  $("#app").hidden = false;
+  await Promise.all([montarNav(), recarregar()]);
+}
+
+// ---- Importação -----------------------------------------------------------
+
+async function escolherEImportar() {
+  const pasta = await api.selecionarPasta();
+  if (!pasta) return;
+  $("#welcome").hidden = true;
+  $("#app").hidden = false;
+  $("#progresso").hidden = false;
+  const resultado = await api.importarPasta(pasta);
+  $("#progresso").hidden = true;
+  await montarNav();
+  await recarregar();
+  const c = $("#contagem");
+  c.textContent =
+    `Importação concluída: ${resultado.novos} novos, ${resultado.atualizados} atualizados, ` +
+    `${resultado.erros} com erro (${(resultado.duracaoMs / 1000).toFixed(1)}s).`;
+}
+
+function atualizarProgresso(p: {
+  fase: string; total: number; processados: number; erros: number; arquivoAtual: string | null;
+}) {
+  const pct = p.total > 0 ? Math.round((p.processados / p.total) * 100) : 0;
+  $<HTMLElement>("#prog-barra").style.width = `${pct}%`;
+  $("#prog-titulo").textContent = p.fase === "varrendo" ? "Procurando seus bordados…" : "Lendo seus bordados…";
+  $("#prog-texto").textContent =
+    p.total > 0
+      ? `${p.processados} de ${p.total}${p.arquivoAtual ? ` · ${p.arquivoAtual}` : ""}`
+      : "Procurando arquivos…";
+}
+
+// ---- Navegação lateral ----------------------------------------------------
+
+async function montarNav() {
+  const [categorias, status] = await Promise.all([api.listarCategorias(), api.listarStatus()]);
+  const nav = $("#nav");
+  nav.innerHTML = "";
+
+  const botao = (rotulo: string, chave: string, cont: number | null, onClick: () => void) => {
+    const b = document.createElement("button");
+    b.className = estado.filtroAtivo === chave ? "ativo" : "";
+    b.innerHTML = `<span>${rotulo}</span>${cont != null ? `<span class="cont">${cont}</span>` : ""}`;
+    b.onclick = () => {
+      estado.filtroAtivo = chave;
+      onClick();
+      montarNav();
+      recarregar();
+    };
+    nav.appendChild(b);
+  };
+
+  botao("Todos os desenhos", "todos", null, () => (estado.filtros = { busca: estado.filtros.busca }));
+  botao("♥ Favoritas", "favoritas", null, () =>
+    (estado.filtros = { busca: estado.filtros.busca, favorita: true }));
+
+  const gStatus = document.createElement("div");
+  gStatus.className = "grupo"; gStatus.textContent = "Situação";
+  nav.appendChild(gStatus);
+  for (const s of status as Status[]) {
+    botao(s.nome, `status-${s.id}`, null, () =>
+      (estado.filtros = { busca: estado.filtros.busca, statusId: s.id }));
+  }
+
+  const catComItens = (categorias as Categoria[]).filter((c) => c.total > 0);
+  if (catComItens.length) {
+    const g = document.createElement("div");
+    g.className = "grupo"; g.textContent = "Categorias";
+    nav.appendChild(g);
+    for (const c of catComItens) {
+      botao(c.nome, `cat-${c.id}`, c.total, () =>
+        (estado.filtros = { busca: estado.filtros.busca, categoriaId: c.id }));
+    }
+  }
+}
+
+// ---- Grade ----------------------------------------------------------------
+
+async function recarregar() {
+  const { total, itens } = await api.listarMatrizes(estado.filtros, estado.ordenacao, {
+    offset: 0, limite: 500,
+  });
+  const grade = $("#grade");
+  const vazio = $("#vazio");
+  $("#contagem").textContent = `${total} ${total === 1 ? "desenho" : "desenhos"}`;
+  grade.innerHTML = "";
+
+  if (itens.length === 0) {
+    vazio.hidden = false;
+    vazio.textContent = estado.filtros.busca
+      ? `Nenhum desenho encontrado para "${estado.filtros.busca}".`
+      : "Nenhum desenho com esses filtros.";
+    return;
+  }
+  vazio.hidden = true;
+
+  for (const m of itens as MatrizResumo[]) {
+    const card = document.createElement("article");
+    card.className = "card" + (estado.selecionada === m.id ? " sel" : "");
+    const flags =
+      (m.favorita ? '<span class="chip on">♥</span>' : "") +
+      (m.testada ? '<span class="chip on">testada</span>' : "");
+    card.innerHTML = `
+      <div class="thumb">${m.miniatura256 ? `<img loading="lazy" src="${thumbUrl(m.hash)}" alt="${m.nomeExibido}">` : "🧵"}</div>
+      <div class="meta">
+        <div class="nome" title="${m.nomeExibido}">${m.nomeExibido}</div>
+        <div class="sub">${fmtMm(m.larguraMm, m.alturaMm)}</div>
+        <div class="flags">${flags}</div>
+      </div>`;
+    card.onclick = () => abrirDetalhes(m.id);
+    card.ondblclick = () => api.abrirLocal(m.id);
+    grade.appendChild(card);
+  }
+}
+
+// ---- Painel de detalhes ---------------------------------------------------
+
+async function abrirDetalhes(id: number) {
+  estado.selecionada = id;
+  document.querySelectorAll(".card").forEach((c) => c.classList.remove("sel"));
+  const d = await api.detalhes(id);
+  const painel = $("#detalhes");
+  painel.hidden = false;
+
+  const etiquetas = (d.etiquetas ?? [])
+    .map((e: any) => `<span class="chip">${e.nome}</span>`)
+    .join(" ");
+
+  painel.innerHTML = `
+    <div class="big"><img src="${thumbUrl(d.hash, 512)}" alt="${d.nome_exibido}"></div>
+    <h2>${d.nome_exibido}</h2>
+    <dl>
+      <dt>Tamanho</dt><dd>${fmtMm(d.larguraMm, d.alturaMm)}</dd>
+      <dt>Pontos</dt><dd>${fmtNum(d.numPontos)}</dd>
+      <dt>Cores</dt><dd>${fmtNum(d.numCores)}</dd>
+      <dt>Bastidor</dt><dd>${d.bastidor_sugerido ?? "—"}</dd>
+      <dt>Formato</dt><dd>${(d.formato ?? "").toUpperCase()} ${d.versaoFormato ? `(${d.versaoFormato})` : ""}</dd>
+      <dt>Arquivo</dt><dd title="${d.caminhoAbsoluto}">${d.nomeOriginal}</dd>
+    </dl>
+    <div class="etiquetas">${etiquetas || '<span class="nota">Sem etiquetas</span>'}</div>
+    <div class="acoes">
+      <button id="d-fav" class="secundario">${d.favorita ? "♥ Favorita" : "♡ Favoritar"}</button>
+      <button id="d-test" class="secundario">${d.testada ? "✓ Testada" : "Marcar testada"}</button>
+    </div>
+    <div class="acoes">
+      <button id="d-abrir" class="primary">Abrir local do arquivo</button>
+    </div>`;
+
+  $<HTMLButtonElement>("#d-fav").onclick = async () => {
+    await api.favoritar(id, !d.favorita);
+    abrirDetalhes(id); recarregar();
+  };
+  $<HTMLButtonElement>("#d-test").onclick = async () => {
+    await api.marcarTestada(id, !d.testada);
+    abrirDetalhes(id); recarregar();
+  };
+  $<HTMLButtonElement>("#d-abrir").onclick = () => api.abrirLocal(id);
+}
+
+iniciar();

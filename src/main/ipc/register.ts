@@ -1,0 +1,68 @@
+/**
+ * Registro dos handlers de IPC. Cada canal corresponde a um método do contrato
+ * (src/shared/contracts.ts). O renderer nunca acessa banco ou disco direto.
+ */
+import { ipcMain, dialog, shell, BrowserWindow } from "electron";
+import type { LibraryRepository } from "../db/repository.ts";
+import { importarPasta } from "../services/importer.ts";
+
+export interface IpcContext {
+  repo: LibraryRepository;
+  cacheDir: string;
+  getWindow: () => BrowserWindow | null;
+}
+
+export function registrarIpc(ctx: IpcContext): void {
+  const { repo, cacheDir } = ctx;
+
+  ipcMain.handle("selecionarPasta", async () => {
+    const win = ctx.getWindow();
+    const res = await dialog.showOpenDialog(win!, {
+      title: "Escolha a pasta com seus bordados",
+      properties: ["openDirectory"],
+    });
+    return res.canceled || res.filePaths.length === 0 ? null : res.filePaths[0];
+  });
+
+  ipcMain.handle("importarPasta", async (_e, caminho: string) => {
+    return importarPasta({ repo, cacheDir }, caminho, {
+      onProgresso: (p) => {
+        ctx.getWindow()?.webContents.send("importacao:progresso", p);
+      },
+    });
+  });
+
+  ipcMain.handle("listarMatrizes", (_e, filtros, ordenacao, pagina) =>
+    repo.listarMatrizes(filtros, ordenacao, pagina),
+  );
+  ipcMain.handle("detalhes", (_e, id: number) => repo.obterDetalhes(id));
+  ipcMain.handle("editarMatriz", (_e, id: number, campos) => repo.editarMatriz(id, campos));
+  ipcMain.handle("favoritar", (_e, id: number, v: boolean) => repo.setFavorita(id, v));
+  ipcMain.handle("marcarTestada", (_e, id: number, v: boolean) => repo.setTestada(id, v));
+
+  ipcMain.handle("adicionarEtiqueta", (_e, matrizId: number, nome: string, dimensao: string) => {
+    const etiquetaId = repo.ensureEtiqueta(nome, dimensao);
+    repo.adicionarEtiqueta(matrizId, etiquetaId);
+    return etiquetaId;
+  });
+  ipcMain.handle("removerEtiqueta", (_e, matrizId: number, etiquetaId: number) =>
+    repo.removerEtiqueta(matrizId, etiquetaId),
+  );
+
+  ipcMain.handle("listarCategorias", () => repo.listarCategorias());
+  ipcMain.handle("listarEtiquetas", () => repo.listarEtiquetas());
+  ipcMain.handle("listarStatus", () => repo.listarStatus());
+  ipcMain.handle("listarPastas", () => repo.listarPastas());
+  ipcMain.handle("listarDuplicados", () => repo.listarDuplicadosPorHash());
+  ipcMain.handle("listarErros", () => repo.listarErros());
+
+  ipcMain.handle("abrirLocal", (_e, matrizId: number) => {
+    const d = repo.obterDetalhes(matrizId);
+    if (d?.caminhoAbsoluto) shell.showItemInFolder(d.caminhoAbsoluto);
+  });
+
+  ipcMain.handle("estadoInicial", () => {
+    const pastas = repo.listarPastas();
+    return { temBiblioteca: pastas.length > 0 };
+  });
+}

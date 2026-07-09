@@ -2,6 +2,7 @@ node_modules/
 .venv-oracle/
 .venv/
 __pycache__/
+out/
 dist/
 build/out/
 *.log

@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; img-src 'self' thumb: data:; style-src 'self' 'unsafe-inline';"
+    />
+    <title>Matrizes</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <!-- Boas-vindas / primeira abertura -->
+    <section id="welcome" class="welcome" hidden>
+      <div class="welcome-card">
+        <div class="welcome-flor">🌸</div>
+        <h1>Veja todas as suas matrizes como imagens</h1>
+        <p>e encontre qualquer desenho em segundos.</p>
+        <button id="btn-escolher" class="primary grande">Escolher minha pasta de bordados</button>
+        <p class="nota">O aplicativo apenas <strong>lê</strong> seus arquivos. Nada é movido,
+          renomeado ou apagado.</p>
+      </div>
+    </section>
+
+    <!-- App principal -->
+    <div id="app" class="app" hidden>
+      <aside class="sidebar">
+        <div class="marca"><span class="marca-flor">🌸</span> Matrizes</div>
+        <nav id="nav" class="nav"></nav>
+        <button id="btn-add-pasta" class="secundario">+ Adicionar pasta</button>
+      </aside>
+
+      <main class="conteudo">
+        <header class="topo">
+          <div class="busca">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></svg>
+            <input id="busca" type="search" placeholder="Busque um desenho pelo nome…" autocomplete="off" />
+          </div>
+          <select id="ordenar" aria-label="Ordenar">
+            <option value="nome">Ordem alfabética</option>
+            <option value="pontos">Mais pontos</option>
+            <option value="tamanho">Maiores</option>
+            <option value="data">Mais recentes</option>
+          </select>
+          <div class="zoom">
+            <button data-zoom="p" title="Miniaturas menores">−</button>
+            <button data-zoom="g" title="Miniaturas maiores">+</button>
+          </div>
+        </header>
+
+        <div id="contagem" class="contagem"></div>
+        <div id="grade" class="grade"></div>
+        <div id="vazio" class="vazio" hidden></div>
+      </main>
+
+      <section id="detalhes" class="detalhes" hidden></section>
+    </div>
+
+    <!-- Overlay de progresso -->
+    <div id="progresso" class="progresso" hidden>
+      <div class="progresso-card">
+        <h2 id="prog-titulo">Lendo seus bordados…</h2>
+        <div class="barra"><div id="prog-barra" class="barra-preench"></div></div>
+        <p id="prog-texto" class="prog-texto"></p>
+        <p class="nota">Você já pode usar os desenhos que forem aparecendo.</p>
+      </div>
+    </div>
+
+    <script type="module" src="./app.ts"></script>
+  </body>
+</html>

@@ -4,7 +4,11 @@
   "private": true,
   "type": "module",
   "description": "Organizador de matrizes de bordado computadorizado (.PES)",
+  "main": "out/main/index.js",
   "scripts": {
+    "dev": "electron-vite dev",
+    "build:app": "electron-vite build",
+    "start": "electron-vite preview",
     "inspect": "tsx scripts/inspect.ts",
     "validate": "tsx scripts/validate.ts",
     "test": "vitest run",
@@ -13,8 +17,11 @@
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.10.0",
+    "electron": "^33.4.11",
+    "electron-vite": "^5.0.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
+    "vite": "^5.4.21",
     "vitest": "^2.1.8"
   },
   "dependencies": {
