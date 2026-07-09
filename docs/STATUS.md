@@ -1,61 +1,108 @@
-# Status de implementação do MVP
+# Status de implementação — Matrizes
 
-Situação por item do checklist do plano. Legenda: ✅ pronto e testado ·
-🟡 backend pronto, falta tela · ⬜ pendente · 🪟 requer máquina Windows.
+Última atualização: fim da sessão em que o app foi rodado com a biblioteca
+real da usuária (~1807 matrizes) no Windows.
 
-## Núcleo (pronto e testado — 62 testes automatizados)
+Legenda: ✅ pronto e testado · 🟡 backend pronto, falta tela · ⬜ pendente ·
+🪟 requer máquina Windows.
+
+## Onde estamos
+
+O app **está funcionando na máquina Windows da usuária**, lendo a biblioteca
+real dela (~1807 matrizes, incluindo arquivos PES v1 a v9). Galeria com
+miniaturas, busca, navegação por subpastas, detalhes, favoritar/testar,
+renomear e cópia para pendrive — tudo operante. **63 testes automatizados**
+passando; typecheck e build limpos.
+
+## Núcleo (pronto e testado)
 
 | Item | Estado | Onde |
 |---|---|---|
-| Leitor de `.PES` (v1–v6, paleta embutida) | ✅ | `src/main/embroidery/` |
-| Paridade exata com oráculo (37/37) | ✅ | `tests/unit/pes-reader.test.ts` |
+| Leitor de `.PES` (v1–v10, paleta embutida) | ✅ | `src/main/embroidery/` |
+| Paridade com oráculo PyEmbroidery (37/37) | ✅ | `tests/unit/pes-reader.test.ts` |
 | Miniaturas SVG→PNG nas cores reais | ✅ | `src/main/thumbnails/` |
 | Banco SQLite: esquema, migrações, seeds | ✅ | `src/main/db/` |
-| Busca por nome sem acento (FTS5) | ✅ | `repository.ts` / `db.test.ts` |
-| Filtros (pasta, tamanho, formato, status, categoria, etiquetas, favorita, testada) | ✅ | `repository.ts` |
-| Varredura recursiva + hash SHA-256 | ✅ | `src/main/filesystem/` |
-| Importação incremental (tamanho+mtime) | ✅ | `services/importer.ts` |
-| Cache de miniaturas por hash | ✅ | `thumbnails/cache.ts` |
-| Favoritas, testada, observações, etiquetas | ✅ | `repository.ts` |
-| Sugestão de bastidor | ✅ | `services/bastidores.ts` |
-| Cópia segura para pendrive | ✅ | `services/copier.ts` / `copier.test.ts` |
-| Detecção de unidades removíveis | ✅ (código; só roda no SO real) | `filesystem/drives.ts` |
-| Duplicados por hash (identificar/agrupar) | ✅ backend | `repository.ts` |
+| Busca sem acento (FTS5) | ✅ | `repository.ts` |
+| Varredura recursiva + hash + import incremental | ✅ | `filesystem/`, `services/importer.ts` |
+| **Navegação por subpastas** (árvore recolhível) | ✅ | `repository.listarArvorePastas` + `renderer` |
+| **Renomear** (nome exibido, no painel de detalhes) | ✅ | `renderer/app.ts` |
+| Favoritas / Testadas / Não testadas (lateral) | ✅ | `renderer/app.ts` |
+| Cópia segura para pendrive | ✅ | `services/copier.ts` |
 | Backup + verificação de integridade | ✅ | `db/backup.ts` |
-| App Electron: galeria, busca, detalhes, importar | ✅ (build+types) | `src/main/index.ts`, `src/renderer/` |
+| App Electron (build + typecheck) | ✅ | `src/main/index.ts`, `src/renderer/` |
 
 ## Falta tela (backend pronto)
 
 | Item | Estado | Observação |
 |---|---|---|
-| Tela de duplicados | 🟡 | `listarDuplicados()` já existe; falta a tela |
-| Tela de arquivos com erro | 🟡 | `listarErros()` já existe; falta a tela |
-| Seleção múltipla na grade + cópia em lote | 🟡 | cópia aceita vários ids; UI copia 1 por vez hoje |
-| Edição de categorias/etiquetas (tela) | 🟡 | CRUD parcial no repositório |
+| Seleção múltipla na grade | 🟡 | cópia já aceita vários ids; falta a UI de seleção |
+| Renomear em lote | 🟡 | depende da seleção múltipla |
+| Favoritar/testar/copiar em lote | 🟡 | idem |
+| Tela de duplicados | 🟡 | `listarDuplicados()` pronto |
+| Tela de arquivos com erro | 🟡 | `listarErros()` pronto |
+| Categorias/etiquetas (edição) | 🟡 | CRUD parcial no repositório |
 | Tela de configurações | ⬜ | — |
-| Relatório de importação (tela dedicada) | 🟡 | resumo já aparece na barra |
 
-## Pendências que exigem a máquina Windows
+## Pendências de máquina Windows
 
 | Item | Estado |
 |---|---|
-| Recompilar módulos nativos p/ Electron (`npm run rebuild`) | 🪟 |
-| Rodar o app com janela (`npm run dev`) | 🪟 |
-| Gerar e testar o instalador NSIS (`npm run dist`) | 🪟 |
+| Gerar/testar instalador NSIS (`npm run dist`) | 🪟 |
 | Testar com pendrive real | 🪟 |
-| Assinatura de código (evitar SmartScreen) | 🪟 / decisão pendente |
+| (Opcional) fábrica de instalador via GitHub Actions | ⬜ (usuária optou por seguir no modo git por ora) |
 
-## Fora do MVP (planejado para depois)
+## Ideias discutidas / adiadas
 
-- Monitoramento de pastas em tempo real (watcher) — v1.1
-- Duplicados nível 2 (mesmo desenho em formatos diferentes) — v1.2
-- Outros formatos (`.DST`, `.JEF`, `.EXP`, `.VP3`, `.XXX`) — arquitetura já preparada
-- Edição de matrizes, catálogo em PDF, nuvem — pós-MVP
+- **IA para auto-organizar por tema** (floral, moldura, letra…): possível, mas
+  precisa de internet e tem custo → adiada como "turbo" opcional; começar pela
+  organização por subpastas (feita) e nomes de pasta.
+- **Instalador de clique-duplo + auto-update**: objetivo final (Fase 5). Depende
+  de build no Windows — planejado via GitHub Actions quando o app estabilizar.
 
-## Próximos passos recomendados
+## Observações a investigar
 
-1. Na máquina Windows: `npm install && npm run rebuild && npm run dev` para ver
-   o app rodando com a biblioteca real.
-2. Adicionar as telas de duplicados e erros (backend já pronto).
-3. Seleção múltipla na grade para cópia em lote.
-4. `npm run dist` para o primeiro instalador de teste.
+- **Muitas miniaturas aparecem em preto sólido** na biblioteca real. Pode ser
+  linha escura real (comum em molduras) OU uma lacuna na leitura de cor de
+  certos arquivos/versões. Vale investigar com alguns desses arquivos: rodar
+  `npm run inspect -- "caminho\\arquivo.pes"` e comparar cor lida vs. esperada.
+
+## Como a usuária roda o app (contexto para retomar)
+
+A usuária **não é programadora** — guiar com paciência, comandos um por linha,
+sem `&&` (o PowerShell dela é a versão que não aceita). O app roda **no Windows
+dela**, não neste ambiente (que é um container Linux headless — aqui só dá para
+`npm test`, `npm run typecheck`, `npm run build:app`; a janela do Electron NÃO
+abre aqui).
+
+Fluxo dela (já configurado com Git):
+```
+git clone -b claude/embroidery-app-technical-plan-logdvd https://github.com/RomeuNascimento/matrizes.git
+cd matrizes
+npm install
+npm run rebuild        # recompila better-sqlite3/sharp p/ Electron (@electron/rebuild)
+npm run dev            # abre o app
+```
+Atualizar depois: `git pull` e `npm run dev`.
+
+**Dados da usuária** (biblioteca, favoritas, etc.) ficam em
+`%APPDATA%\matrizes` — separados do código; atualizar o código não apaga nada,
+e os arquivos de bordado originais nunca são tocados. A migração v2 normaliza
+os separadores de caminho automaticamente ao abrir (habilita a navegação por
+subpastas na base já existente, sem reimportar).
+
+## Próximos passos sugeridos (para a nova sessão)
+
+1. **Seleção múltipla na grade** → habilita favoritar/testar/copiar/renomear em
+   lote (o pedido natural depois da navegação por pastas).
+2. Investigar as **miniaturas pretas** (ver Observações).
+3. Telas de **duplicados** e **erros** (backends prontos).
+4. Quando estabilizar: **fábrica de instalador** (GitHub Actions) + auto-update.
+
+## Decisões firmadas
+
+- Arquitetura: **Electron + Node/TypeScript + SQLite**; parser próprio em TS
+  (sem Python em runtime; PyEmbroidery só como oráculo de teste).
+- Funciona **local e offline**.
+- **Subpastas** são a organização principal.
+- Segurança: modo leitura sobre os originais; escrita só no destino de cópia e
+  em `%APPDATA%\matrizes`.
