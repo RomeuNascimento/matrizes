@@ -1,0 +1,6 @@
+# Oráculo de leitura de bordado (referência para validar o leitor em TypeScript).
+# Instale num ambiente virtual:
+#   python3 -m venv .venv-oracle
+#   .venv-oracle/bin/pip install -r tests/oracle/requirements.txt
+pyembroidery>=1.5
+Pillow>=10

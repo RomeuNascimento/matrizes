@@ -1,0 +1,695 @@
+[
+  {
+    "arquivo": "AFLORAL.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 45.9,
+    "altura_mm": 51.9,
+    "num_pontos": 2467,
+    "num_cores": 5,
+    "cores_hex": [
+      "#BA9800",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 17047,
+    "miniatura": "thumbs/AFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "ARCOFLORAL.pes",
+    "nome_interno": null,
+    "versao": 6,
+    "largura_mm": 175.7,
+    "altura_mm": 216.6,
+    "num_pontos": 9012,
+    "num_cores": 8,
+    "cores_hex": [
+      "#6CD900",
+      "#E90E86"
+    ],
+    "tamanho_bytes": 59700,
+    "miniatura": "thumbs/ARCOFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "ARCOFLORAL2.pes",
+    "nome_interno": null,
+    "versao": 6,
+    "largura_mm": 175.7,
+    "altura_mm": 218.4,
+    "num_pontos": 16656,
+    "num_cores": 48,
+    "cores_hex": [
+      "#F39178",
+      "#E90E86",
+      "#EDCCFB",
+      "#DD84CD",
+      "#6CD900",
+      "#6BD38A"
+    ],
+    "tamanho_bytes": 124655,
+    "miniatura": "thumbs/ARCOFLORAL2.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "ARCOFLORAL3.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 94.9,
+    "altura_mm": 103.6,
+    "num_pontos": 9128,
+    "num_cores": 16,
+    "cores_hex": [
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 61134,
+    "miniatura": "thumbs/ARCOFLORAL3.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "BFLORAL.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 39.6,
+    "altura_mm": 51.7,
+    "num_pontos": 2550,
+    "num_cores": 5,
+    "cores_hex": [
+      "#BA9800",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 17521,
+    "miniatura": "thumbs/BFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "CANTOFLORAL.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 75.4,
+    "altura_mm": 39.3,
+    "num_pontos": 2529,
+    "num_cores": 6,
+    "cores_hex": [
+      "#B2AFD4",
+      "#915FAC",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 18006,
+    "miniatura": "thumbs/CANTOFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "CFLORAL.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 41.1,
+    "altura_mm": 52.2,
+    "num_pontos": 2263,
+    "num_cores": 5,
+    "cores_hex": [
+      "#BA9800",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 15823,
+    "miniatura": "thumbs/CFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "DETALHE.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 61.8,
+    "altura_mm": 147.2,
+    "num_pontos": 938,
+    "num_cores": 1,
+    "cores_hex": [
+      "#70BC1F"
+    ],
+    "tamanho_bytes": 6789,
+    "miniatura": "thumbs/DETALHE.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "DETALHE2.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 123.7,
+    "altura_mm": 23.4,
+    "num_pontos": 3962,
+    "num_cores": 12,
+    "cores_hex": [
+      "#B2AFD4",
+      "#915FAC",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 28462,
+    "miniatura": "thumbs/DETALHE2.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "DFLORAL.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 39.3,
+    "altura_mm": 51.9,
+    "num_pontos": 2438,
+    "num_cores": 5,
+    "cores_hex": [
+      "#BA9800",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 16873,
+    "miniatura": "thumbs/DFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "EFLORAL.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 37.3,
+    "altura_mm": 53.1,
+    "num_pontos": 2658,
+    "num_cores": 5,
+    "cores_hex": [
+      "#BA9800",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 18225,
+    "miniatura": "thumbs/EFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "FFLORAL.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 36.6,
+    "altura_mm": 52.1,
+    "num_pontos": 2375,
+    "num_cores": 5,
+    "cores_hex": [
+      "#BA9800",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 16495,
+    "miniatura": "thumbs/FFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "FLOR.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 25.6,
+    "altura_mm": 39.8,
+    "num_pontos": 1197,
+    "num_cores": 4,
+    "cores_hex": [
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 9192,
+    "miniatura": "thumbs/FLOR.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "FLORGRANDE.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 72.8,
+    "altura_mm": 73.3,
+    "num_pontos": 5108,
+    "num_cores": 24,
+    "cores_hex": [
+      "#B2AFD4",
+      "#915FAC",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 38574,
+    "miniatura": "thumbs/FLORGRANDE.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "GFLORAL.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 42.7,
+    "altura_mm": 51.9,
+    "num_pontos": 2379,
+    "num_cores": 5,
+    "cores_hex": [
+      "#BA9800",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 16551,
+    "miniatura": "thumbs/GFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "HFLORAL.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 44.3,
+    "altura_mm": 52.2,
+    "num_pontos": 3139,
+    "num_cores": 5,
+    "cores_hex": [
+      "#BA9800",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 21111,
+    "miniatura": "thumbs/HFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "IFLORAL.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 23.8,
+    "altura_mm": 53.9,
+    "num_pontos": 2255,
+    "num_cores": 5,
+    "cores_hex": [
+      "#BA9800",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 15799,
+    "miniatura": "thumbs/IFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "JFLORAL.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 30.1,
+    "altura_mm": 52.6,
+    "num_pontos": 2034,
+    "num_cores": 5,
+    "cores_hex": [
+      "#BA9800",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 14481,
+    "miniatura": "thumbs/JFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "KFLORAL.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 43.4,
+    "altura_mm": 52.4,
+    "num_pontos": 2854,
+    "num_cores": 5,
+    "cores_hex": [
+      "#BA9800",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 19369,
+    "miniatura": "thumbs/KFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "LFLORAL.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 38.9,
+    "altura_mm": 52.5,
+    "num_pontos": 2117,
+    "num_cores": 5,
+    "cores_hex": [
+      "#BA9800",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 14979,
+    "miniatura": "thumbs/LFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "MEIOARCOFLORAL.pes",
+    "nome_interno": null,
+    "versao": 4,
+    "largura_mm": 142.0,
+    "altura_mm": 42.6,
+    "num_pontos": 2214,
+    "num_cores": 4,
+    "cores_hex": [
+      "#70BC1F",
+      "#F73866"
+    ],
+    "tamanho_bytes": 15747,
+    "miniatura": "thumbs/MEIOARCOFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "MEIOARCOFLORAL2.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 121.9,
+    "altura_mm": 27.9,
+    "num_pontos": 4223,
+    "num_cores": 16,
+    "cores_hex": [
+      "#B2AFD4",
+      "#915FAC",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 31000,
+    "miniatura": "thumbs/MEIOARCOFLORAL2.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "MFLORAL.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 46.4,
+    "altura_mm": 53.3,
+    "num_pontos": 3558,
+    "num_cores": 5,
+    "cores_hex": [
+      "#BA9800",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 23625,
+    "miniatura": "thumbs/MFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "MONOGRAMAFLORAL.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 93.4,
+    "altura_mm": 106.7,
+    "num_pontos": 3056,
+    "num_cores": 4,
+    "cores_hex": [
+      "#70BC1F",
+      "#F73866"
+    ],
+    "tamanho_bytes": 20890,
+    "miniatura": "thumbs/MONOGRAMAFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "NFLORAL.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 43.1,
+    "altura_mm": 52.9,
+    "num_pontos": 2934,
+    "num_cores": 5,
+    "cores_hex": [
+      "#BA9800",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 19849,
+    "miniatura": "thumbs/NFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "OFLORAL.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 42.6,
+    "altura_mm": 52.8,
+    "num_pontos": 2035,
+    "num_cores": 5,
+    "cores_hex": [
+      "#BA9800",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 14479,
+    "miniatura": "thumbs/OFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "PFLORAL.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 36.9,
+    "altura_mm": 52.1,
+    "num_pontos": 2361,
+    "num_cores": 5,
+    "cores_hex": [
+      "#BA9800",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 16443,
+    "miniatura": "thumbs/PFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "QFLORAL.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 43.3,
+    "altura_mm": 52.6,
+    "num_pontos": 2399,
+    "num_cores": 5,
+    "cores_hex": [
+      "#BA9800",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 16663,
+    "miniatura": "thumbs/QFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "RFLORAL.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 40.7,
+    "altura_mm": 52.3,
+    "num_pontos": 2721,
+    "num_cores": 5,
+    "cores_hex": [
+      "#BA9800",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 18595,
+    "miniatura": "thumbs/RFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "SFLORAL.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 35.0,
+    "altura_mm": 52.6,
+    "num_pontos": 2304,
+    "num_cores": 5,
+    "cores_hex": [
+      "#BA9800",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 16093,
+    "miniatura": "thumbs/SFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "TFLORAL.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 42.0,
+    "altura_mm": 53.0,
+    "num_pontos": 2395,
+    "num_cores": 5,
+    "cores_hex": [
+      "#BA9800",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 16639,
+    "miniatura": "thumbs/TFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "UFLORAL.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 42.8,
+    "altura_mm": 52.5,
+    "num_pontos": 2438,
+    "num_cores": 5,
+    "cores_hex": [
+      "#BA9800",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 16873,
+    "miniatura": "thumbs/UFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "VFLORAL.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 43.9,
+    "altura_mm": 52.8,
+    "num_pontos": 2534,
+    "num_cores": 5,
+    "cores_hex": [
+      "#BA9800",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 17449,
+    "miniatura": "thumbs/VFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "WFLORAL.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 46.5,
+    "altura_mm": 53.3,
+    "num_pontos": 3416,
+    "num_cores": 5,
+    "cores_hex": [
+      "#BA9800",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 22773,
+    "miniatura": "thumbs/WFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "XFLORAL.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 42.0,
+    "altura_mm": 51.7,
+    "num_pontos": 2650,
+    "num_cores": 5,
+    "cores_hex": [
+      "#BA9800",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 18145,
+    "miniatura": "thumbs/XFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "YFLORAL.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 42.2,
+    "altura_mm": 53.8,
+    "num_pontos": 2461,
+    "num_cores": 5,
+    "cores_hex": [
+      "#BA9800",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 17011,
+    "miniatura": "thumbs/YFLORAL.png",
+    "status": "ok"
+  },
+  {
+    "arquivo": "ZFLORAL.pes",
+    "nome_interno": null,
+    "versao": 1,
+    "largura_mm": 33.4,
+    "altura_mm": 52.4,
+    "num_pontos": 2341,
+    "num_cores": 5,
+    "cores_hex": [
+      "#BA9800",
+      "#FCBBC5",
+      "#F73866",
+      "#70BC1F",
+      "#9ED67D"
+    ],
+    "tamanho_bytes": 16323,
+    "miniatura": "thumbs/ZFLORAL.png",
+    "status": "ok"
+  }
+]

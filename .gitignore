@@ -1,4 +1,7 @@
 node_modules/
+.venv-oracle/
+.venv/
+__pycache__/
 dist/
 build/out/
 *.log
