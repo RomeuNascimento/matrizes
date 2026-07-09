@@ -9,8 +9,12 @@ import { openDatabase } from "./db/database.ts";
 import { LibraryRepository } from "./db/repository.ts";
 import { registrarIpc } from "./ipc/register.ts";
 import { thumbPath } from "./thumbnails/cache.ts";
+import { checarIntegridade, fazerBackup, rotacionarBackups } from "./db/backup.ts";
+import type { Database as DB } from "better-sqlite3";
 
 let mainWindow: BrowserWindow | null = null;
+let bancoAtual: DB | null = null;
+let dirBackups = "";
 
 // O protocolo precisa ser declarado como privilegiado antes de app.ready.
 protocol.registerSchemesAsPrivileged([
@@ -47,8 +51,13 @@ app.whenReady().then(() => {
   const userData = app.getPath("userData");
   const dbPath = join(userData, "library.db");
   const cacheDir = join(userData, "cache", "thumbs");
+  dirBackups = join(userData, "backups");
 
   const db = openDatabase(dbPath);
+  if (!checarIntegridade(db)) {
+    console.error("Banco falhou na verificação de integridade — verifique backups em", dirBackups);
+  }
+  bancoAtual = db;
   const repo = new LibraryRepository(db);
 
   // Protocolo thumb://img/<hash>/<size> → arquivo de cache correspondente.
@@ -71,6 +80,18 @@ app.whenReady().then(() => {
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) criarJanela();
   });
+});
+
+app.on("before-quit", () => {
+  // Backup do catálogo ao sair (nunca toca nos arquivos de bordado originais).
+  if (bancoAtual && dirBackups) {
+    try {
+      fazerBackup(bancoAtual, dirBackups, new Date().toISOString());
+      rotacionarBackups(dirBackups, 8);
+    } catch (e) {
+      console.error("Falha ao fazer backup do banco:", (e as Error).message);
+    }
+  }
 });
 
 app.on("window-all-closed", () => {
