@@ -125,24 +125,6 @@ describe("banco + repositório", () => {
     expect(repo.listarMatrizes({ busca: "natal" }).total).toBe(1);
   });
 
-  it("move arquivo de pasta: atualiza caminho, subpasta e busca", () => {
-    const pasta = repo.ensurePasta("/lib");
-    const id = importar(repo, pasta, "moldura.pes", "hMove");
-
-    const info = repo.obterArquivoParaMover(id);
-    expect(info?.raiz).toBe("/lib");
-    expect(info?.caminhoAbsoluto).toBe("/lib/moldura.pes");
-
-    repo.atualizarLocalArquivo(id, "/lib/Molduras/moldura.pes", "Molduras/moldura.pes");
-
-    const d = repo.obterDetalhes(id);
-    expect(d.caminhoAbsoluto).toBe("/lib/Molduras/moldura.pes");
-    // aparece na subpasta nova e some da raiz
-    expect(repo.listarMatrizes({ subpasta: "Molduras" }).total).toBe(1);
-    // continua encontrável pela busca (nome exibido inalterado)
-    expect(repo.listarMatrizes({ busca: "moldura" }).total).toBe(1);
-  });
-
   it("agrupa duplicados por hash", () => {
     const pasta = repo.ensurePasta("/lib");
     // dois arquivos com o mesmo conteúdo (mesmo hash), caminhos diferentes

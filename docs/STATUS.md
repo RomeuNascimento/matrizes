@@ -28,14 +28,13 @@ passando; typecheck e build limpos.
 | **Renomear** (nome exibido; janelinha própria, não `prompt()`) | ✅ | `pedirTexto` em `renderer/app.ts` |
 | **Miniaturas com fundo claro** (desenhos escuros visíveis) | ✅ | `--fabric` em `styles.css` |
 | **Auto-cura de miniatura** (regenera cache faltante) | ✅ | protocolo `thumb://` em `index.ts` |
-| **Mover arquivo para outra pasta** (organizar de dentro do app) | ✅ | `moverArquivo` (IPC + `repository`) |
-| **Painel de detalhes fixo** (não some ao rolar a grade) | ✅ | `.app { overflow:hidden }` |
+| **Painel de detalhes fixo** (não some ao rolar; só a grade rola) | ✅ | `overflow:hidden` + `min-height:0` |
 | **FTS com conteúdo** (renomear/mover não quebram a busca) | ✅ | migração 3 em `migrations.ts` |
 | **Seleção múltipla na grade** (caixa no card, Ctrl/Shift+clique, Ctrl+A, Esc) | ✅ | `renderer/app.ts` |
 | **Ações em lote**: favoritar, marcar testada, renomear e copiar | ✅ | barra flutuante em `renderer/app.ts` |
 | **Tela de repetidos** (agrupa idênticos por hash, abre pasta) | ✅ | `renderDuplicados` em `renderer/app.ts` |
 | **Tela de arquivos com problema** (motivo + abrir pasta) | ✅ | `renderErros` em `renderer/app.ts` |
-| **Editar etiquetas** (adicionar/remover no painel de detalhes) | ✅ | `renderer/app.ts` |
+| **Etiquetas**: criar/aplicar/remover + **filtrar pela lateral** | ✅ | grupo "Etiquetas" em `renderer/app.ts` |
 | Favoritas / Testadas / Não testadas (lateral) | ✅ | `renderer/app.ts` |
 | Cópia segura para pendrive | ✅ | `services/copier.ts` |
 | Backup + verificação de integridade | ✅ | `db/backup.ts` |
@@ -136,9 +135,10 @@ subpastas na base já existente, sem reimportar).
     decidir qual apagar (o app nunca apaga sozinho).
   - **⚠ Com problema**: lista arquivos que não deram para ler, com o motivo e
     **Abrir pasta** para localizar.
-- **Etiquetas**: no painel de detalhes (à direita), o botão **+ etiqueta**
-  adiciona uma marca (ex.: "floral", "natal") e o **×** em cada etiqueta a
-  remove. Servem para achar depois pela busca.
+- **Etiquetas** (o jeito de organizar sem mexer nos arquivos): no painel de
+  detalhes, o botão **+ etiqueta** cria/aplica uma marca (ex.: "floral", "natal")
+  e o **×** em cada etiqueta a remove. As etiquetas em uso aparecem na **lateral**,
+  no grupo **Etiquetas** — clicando numa, a grade mostra só os desenhos com ela.
 
 ## Decisões firmadas
 
@@ -146,7 +146,8 @@ subpastas na base já existente, sem reimportar).
   (sem Python em runtime; PyEmbroidery só como oráculo de teste).
 - Funciona **local e offline**.
 - **Subpastas** são a organização principal.
-- Segurança: modo leitura sobre os originais; escrita só no destino de cópia e
-  em `%APPDATA%\matrizes`. **Exceção deliberada**: "Mover para outra pasta"
-  altera o arquivo original (move no disco) — é opt-in por ação, com confirmação,
-  e só permite destinos dentro da biblioteca importada.
+- Segurança: **modo leitura sobre os originais** (nunca move/renomeia/apaga);
+  escrita só no destino de cópia e em `%APPDATA%\matrizes`. Organização se faz
+  por **subpastas** (leitura) e **etiquetas** (só no banco) — não movendo arquivos.
+- **Público-alvo:** mulheres ~50 anos, pouca intimidade com informática. Priorizar
+  simplicidade, botões óbvios e nada que mexa nos arquivos originais.
