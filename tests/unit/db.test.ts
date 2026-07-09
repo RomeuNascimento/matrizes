@@ -90,6 +90,31 @@ describe("banco + repositório", () => {
     expect(encontrado?.caminho_absoluto).toBe("/lib/orig.pes");
   });
 
+  it("monta a árvore de subpastas e filtra por subpasta", () => {
+    const pasta = repo.ensurePasta("/lib");
+    const inserir = (rel: string) =>
+      repo.inserirMatrizComArquivo({
+        pastaId: pasta, caminhoAbsoluto: `/lib/${rel}`, caminhoRelativo: rel,
+        nomeOriginal: rel.split("/").pop()!, extensao: "pes", hash: rel,
+        tamanhoBytes: 1, criadoEmFs: null, modificadoEmFs: null,
+      });
+    inserir("Natal/Bola/a.pes");
+    inserir("Natal/Bola/b.pes");
+    inserir("Natal/Arvore/c.pes");
+    inserir("Pascoa/d.pes");
+
+    const arvore = repo.listarArvorePastas();
+    const natal = arvore.find((n) => n.nome === "Natal")!;
+    expect(natal.total).toBe(3); // recursivo
+    expect(natal.filhos.map((f) => f.nome).sort()).toEqual(["Arvore", "Bola"]);
+    expect(natal.filhos.find((f) => f.nome === "Bola")!.total).toBe(2);
+
+    // filtro recursivo
+    expect(repo.listarMatrizes({ subpasta: "Natal" }).total).toBe(3);
+    expect(repo.listarMatrizes({ subpasta: "Natal/Bola" }).total).toBe(2);
+    expect(repo.listarMatrizes({ subpasta: "Pascoa" }).total).toBe(1);
+  });
+
   it("agrupa duplicados por hash", () => {
     const pasta = repo.ensurePasta("/lib");
     // dois arquivos com o mesmo conteúdo (mesmo hash), caminhos diferentes

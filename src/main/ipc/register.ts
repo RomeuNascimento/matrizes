@@ -55,6 +55,7 @@ export function registrarIpc(ctx: IpcContext): void {
   ipcMain.handle("listarEtiquetas", () => repo.listarEtiquetas());
   ipcMain.handle("listarStatus", () => repo.listarStatus());
   ipcMain.handle("listarPastas", () => repo.listarPastas());
+  ipcMain.handle("listarArvorePastas", () => repo.listarArvorePastas());
   ipcMain.handle("listarDuplicados", () => repo.listarDuplicadosPorHash());
   ipcMain.handle("listarErros", () => repo.listarErros());
 

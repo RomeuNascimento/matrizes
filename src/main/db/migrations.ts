@@ -165,6 +165,13 @@ export const MIGRATIONS: Migration[] = [
     );
     `,
   },
+  {
+    version: 2,
+    name: "normalizar_separador_caminho_relativo",
+    // Padroniza os caminhos relativos já gravados para usar "/" (importações
+    // feitas no Windows guardaram "\"), habilitando a navegação por subpastas.
+    sql: `UPDATE arquivos SET caminho_relativo = REPLACE(caminho_relativo, char(92), '/');`,
+  },
 ];
 
 /** Aplica as migrações pendentes. Idempotente. */

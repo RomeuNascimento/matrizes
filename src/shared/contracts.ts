@@ -34,9 +34,17 @@ export interface FiltrosBusca {
   favorita?: boolean | null;
   testada?: boolean | null;
   pastaId?: number | null;
+  subpasta?: string | null;
   formato?: string | null;
   maxLarguraMm?: number | null;
   maxAlturaMm?: number | null;
+}
+
+export interface PastaNode {
+  nome: string;
+  caminho: string;
+  total: number;
+  filhos: PastaNode[];
 }
 
 export interface Ordenacao {
@@ -134,6 +142,7 @@ export interface AppApi {
   listarEtiquetas(): Promise<Etiqueta[]>;
   listarStatus(): Promise<Status[]>;
   listarPastas(): Promise<Pasta[]>;
+  listarArvorePastas(): Promise<PastaNode[]>;
   listarDuplicados(): Promise<any[]>;
   listarErros(): Promise<any[]>;
   abrirLocal(matrizId: number): Promise<void>;

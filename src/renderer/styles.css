@@ -64,6 +64,13 @@ button { font: inherit; cursor: pointer; }
 .nav button.ativo { background: var(--rose); color: #fff; }
 .nav button .cont { font-size: .78rem; opacity: .7; font-variant-numeric: tabular-nums; }
 .nav button.ativo .cont { opacity: .9; }
+.nav button.pasta { font-size: .9rem; }
+.pasta-nome { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pasta .seta { display: inline-block; width: 14px; color: var(--ink-soft); }
+.nav button.pasta.ativo .seta { color: #fff; }
+.lapis { background: none; border: none; color: var(--ink-soft); font-size: .95rem; padding: 2px 6px; border-radius: 6px; }
+.lapis:hover { background: var(--surface-2); color: var(--rose); }
+.nome-det { display: flex; align-items: center; gap: 6px; }
 
 .conteudo { display: flex; flex-direction: column; min-width: 0; }
 .topo { display: flex; gap: 12px; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--line); }

@@ -3,7 +3,7 @@
  * sistema diretamente.
  */
 import type {
-  AppApi, MatrizResumo, FiltrosBusca, Ordenacao, Categoria, Status,
+  AppApi, MatrizResumo, FiltrosBusca, Ordenacao, PastaNode,
 } from "../shared/contracts.ts";
 
 declare global {
@@ -22,6 +22,7 @@ const estado = {
   ordenacao: { campo: "nome", direcao: "asc" } as Ordenacao,
   selecionada: null as number | null,
   filtroAtivo: "todos" as string,
+  expandidas: new Set<string>(),
 };
 
 // ---- Inicialização --------------------------------------------------------
@@ -103,7 +104,7 @@ function atualizarProgresso(p: {
 // ---- Navegação lateral ----------------------------------------------------
 
 async function montarNav() {
-  const [categorias, status] = await Promise.all([api.listarCategorias(), api.listarStatus()]);
+  const arvore = await api.listarArvorePastas();
   const nav = $("#nav");
   nav.innerHTML = "";
 
@@ -120,27 +121,57 @@ async function montarNav() {
     nav.appendChild(b);
   };
 
-  botao("Todos os desenhos", "todos", null, () => (estado.filtros = { busca: estado.filtros.busca }));
+  const semFiltros = () => (estado.filtros = { busca: estado.filtros.busca });
+
+  botao("Todos os desenhos", "todos", null, semFiltros);
   botao("♥ Favoritas", "favoritas", null, () =>
     (estado.filtros = { busca: estado.filtros.busca, favorita: true }));
+  botao("✓ Testadas", "testadas", null, () =>
+    (estado.filtros = { busca: estado.filtros.busca, testada: true }));
+  botao("○ Não testadas", "nao-testadas", null, () =>
+    (estado.filtros = { busca: estado.filtros.busca, testada: false }));
 
-  const gStatus = document.createElement("div");
-  gStatus.className = "grupo"; gStatus.textContent = "Situação";
-  nav.appendChild(gStatus);
-  for (const s of status as Status[]) {
-    botao(s.nome, `status-${s.id}`, null, () =>
-      (estado.filtros = { busca: estado.filtros.busca, statusId: s.id }));
-  }
-
-  const catComItens = (categorias as Categoria[]).filter((c) => c.total > 0);
-  if (catComItens.length) {
+  if (arvore.length) {
     const g = document.createElement("div");
-    g.className = "grupo"; g.textContent = "Categorias";
+    g.className = "grupo";
+    g.textContent = "Pastas";
     nav.appendChild(g);
-    for (const c of catComItens) {
-      botao(c.nome, `cat-${c.id}`, c.total, () =>
-        (estado.filtros = { busca: estado.filtros.busca, categoriaId: c.id }));
+    for (const node of arvore) renderPasta(nav, node, 0);
+  }
+}
+
+/** Renderiza um nó de pasta (recursivo), com recolher/expandir. */
+function renderPasta(container: HTMLElement, node: PastaNode, nivel: number) {
+  const chave = `pasta-${node.caminho}`;
+  const temFilhos = node.filhos.length > 0;
+  const aberta = estado.expandidas.has(node.caminho);
+
+  const linha = document.createElement("button");
+  linha.className = "pasta" + (estado.filtroAtivo === chave ? " ativo" : "");
+  linha.style.paddingLeft = `${10 + nivel * 14}px`;
+  const seta = temFilhos ? (aberta ? "▾" : "▸") : "•";
+  linha.innerHTML =
+    `<span class="pasta-nome"><span class="seta">${seta}</span> ${node.nome}</span>` +
+    `<span class="cont">${node.total}</span>`;
+
+  linha.onclick = (ev) => {
+    // clique na seta (início da linha) alterna; no resto, filtra
+    const alvoSeta = (ev.offsetX ?? 99) < 24 + nivel * 14 && temFilhos;
+    if (alvoSeta) {
+      if (aberta) estado.expandidas.delete(node.caminho);
+      else estado.expandidas.add(node.caminho);
+      montarNav();
+      return;
     }
+    estado.filtroAtivo = chave;
+    estado.filtros = { busca: estado.filtros.busca, subpasta: node.caminho };
+    montarNav();
+    recarregar();
+  };
+  container.appendChild(linha);
+
+  if (temFilhos && aberta) {
+    for (const filho of node.filhos) renderPasta(container, filho, nivel + 1);
   }
 }
 
@@ -198,7 +229,7 @@ async function abrirDetalhes(id: number) {
 
   painel.innerHTML = `
     <div class="big"><img src="${thumbUrl(d.hash, 512)}" alt="${d.nome_exibido}"></div>
-    <h2>${d.nome_exibido}</h2>
+    <h2 class="nome-det">${d.nome_exibido} <button id="d-renomear" class="lapis" title="Renomear">✎</button></h2>
     <dl>
       <dt>Tamanho</dt><dd>${fmtMm(d.larguraMm, d.alturaMm)}</dd>
       <dt>Pontos</dt><dd>${fmtNum(d.numPontos)}</dd>
@@ -227,6 +258,15 @@ async function abrirDetalhes(id: number) {
   };
   $<HTMLButtonElement>("#d-abrir").onclick = () => api.abrirLocal(id);
   $<HTMLButtonElement>("#d-copiar").onclick = () => copiarParaPendrive([id]);
+  $<HTMLButtonElement>("#d-renomear").onclick = async () => {
+    const novo = prompt("Novo nome do desenho:", d.nome_exibido);
+    if (novo == null) return;
+    const nome = novo.trim();
+    if (!nome || nome === d.nome_exibido) return;
+    await api.editarMatriz(id, { nome_exibido: nome });
+    abrirDetalhes(id);
+    recarregar();
+  };
 }
 
 // ---- Cópia para pendrive --------------------------------------------------

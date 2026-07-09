@@ -22,6 +22,7 @@ const api: AppApi = {
   listarEtiquetas: () => ipcRenderer.invoke("listarEtiquetas"),
   listarStatus: () => ipcRenderer.invoke("listarStatus"),
   listarPastas: () => ipcRenderer.invoke("listarPastas"),
+  listarArvorePastas: () => ipcRenderer.invoke("listarArvorePastas"),
   listarDuplicados: () => ipcRenderer.invoke("listarDuplicados"),
   listarErros: () => ipcRenderer.invoke("listarErros"),
   abrirLocal: (matrizId) => ipcRenderer.invoke("abrirLocal", matrizId),

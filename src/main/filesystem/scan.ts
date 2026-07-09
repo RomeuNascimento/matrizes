@@ -64,7 +64,9 @@ export async function scanFolder(
             const st = await stat(toLongPath(full));
             encontrados.push({
               caminhoAbsoluto: normalizePath(full),
-              caminhoRelativo: normalizePath(relative(raiz, full)),
+              // caminho relativo sempre com "/" (independente do SO) para a
+              // navegação por subpastas funcionar igual no Windows e demais.
+              caminhoRelativo: normalizePath(relative(raiz, full)).replaceAll("\\", "/"),
               nomeOriginal: basename(full),
               extensao: ext,
               tamanhoBytes: st.size,

@@ -44,9 +44,18 @@ export interface FiltrosBusca {
   favorita?: boolean | null;
   testada?: boolean | null;
   pastaId?: number | null;
+  /** Prefixo de subpasta (relativo), ex.: "Natal/Frames". Filtra recursivamente. */
+  subpasta?: string | null;
   formato?: string | null;
   maxLarguraMm?: number | null;
   maxAlturaMm?: number | null;
+}
+
+export interface PastaNode {
+  nome: string;
+  caminho: string;
+  total: number;
+  filhos: PastaNode[];
 }
 
 export interface Ordenacao {
@@ -288,6 +297,12 @@ export class LibraryRepository {
       where.push("a.pasta_monitorada_id = ?");
       params.push(filtros.pastaId);
     }
+    if (filtros.subpasta) {
+      // recursivo: tudo que está dentro da subpasta (e subníveis)
+      where.push("a.caminho_relativo LIKE ? ESCAPE '\\'");
+      const esc = filtros.subpasta.replace(/[%_\\]/g, (c) => "\\" + c);
+      params.push(`${esc}/%`);
+    }
     if (filtros.formato) {
       where.push("a.extensao = ?");
       params.push(filtros.formato.replace(/^\./, "").toLowerCase());
@@ -449,6 +464,41 @@ export class LibraryRepository {
 
   listarStatus(): any[] {
     return this.db.prepare("SELECT id, nome, cor, sistema FROM status ORDER BY id").all();
+  }
+
+  /** Monta a árvore de subpastas (a partir dos caminhos relativos), com contagens recursivas. */
+  listarArvorePastas(): PastaNode[] {
+    const rows = this.db.prepare("SELECT caminho_relativo AS rel FROM arquivos").all() as Array<{
+      rel: string;
+    }>;
+
+    interface N { nome: string; caminho: string; total: number; filhos: Map<string, N> }
+    const raiz = new Map<string, N>();
+
+    for (const { rel } of rows) {
+      const partes = rel.split("/");
+      partes.pop(); // remove o nome do arquivo
+      let nivel = raiz;
+      let acum = "";
+      for (const parte of partes) {
+        if (!parte) continue;
+        acum = acum ? `${acum}/${parte}` : parte;
+        let node = nivel.get(parte);
+        if (!node) {
+          node = { nome: parte, caminho: acum, total: 0, filhos: new Map() };
+          nivel.set(parte, node);
+        }
+        node.total++;
+        nivel = node.filhos;
+      }
+    }
+
+    const converter = (m: Map<string, N>): PastaNode[] =>
+      [...m.values()]
+        .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
+        .map((n) => ({ nome: n.nome, caminho: n.caminho, total: n.total, filhos: converter(n.filhos) }));
+
+    return converter(raiz);
   }
 
   listarPastas(): any[] {
