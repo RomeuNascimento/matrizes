@@ -6,6 +6,7 @@
   "description": "Organizador de matrizes de bordado computadorizado (.PES)",
   "scripts": {
     "inspect": "tsx scripts/inspect.ts",
+    "validate": "tsx scripts/validate.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

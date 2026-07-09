@@ -2,7 +2,28 @@
 
 **Resultado:** 37/37 arquivos `.PES` reais lidos e desenhados com sucesso (100%). 124.099 pontos no total.
 
-Amostra: conjunto *Alfabeto Floral* (37 arquivos), todos **PES versão 1** (`#PES0001`), em `tests/fixtures/pes/alfabeto-floral/`.
+Amostra: conjunto *Alfabeto Floral* (37 arquivos) em `tests/fixtures/pes/alfabeto-floral/`.
+A maioria é **PES v1**, mas há também **v4** (`MEIOARCOFLORAL`) e **v6** com paleta
+de linhas embutida (`ARCOFLORAL`, `ARCOFLORAL2`) — o que já exercita o leitor em
+mais de uma versão do formato.
+
+## Leitor próprio em TypeScript — validado (decisão do plano resolvida)
+
+O leitor de PES foi **portado para TypeScript** (`src/embroidery/`) e reproduz
+**exatamente** a verdade de referência do oráculo nos 37 arquivos: dimensões,
+número de pontos, número de cores e os valores hex das cores — incluindo os
+arquivos **PES v6 com paleta de linhas embutida**.
+
+- Geometria (dimensões + pontos): decodificada do bloco PEC, comum a todas as versões.
+- Cores: paleta fixa de 64 linhas do PEC (v1–v4) + leitura das threads embutidas (v5+).
+- Sem dependência de Python em tempo de execução; o PyEmbroidery permanece apenas
+  como oráculo de teste.
+
+> **Decisão pendente "parser próprio vs. sidecar Python" — resolvida:** o parser
+> próprio em TypeScript é suficiente. Mantemos a Alternativa A (Electron + Node/TS).
+
+Rode `npm run validate` (comparação detalhada) ou `npm test` (paridade como teste
+automatizado, 43 casos).
 
 A leitura de referência foi feita com o oráculo (PyEmbroidery). Estes números são a **verdade de referência** que o leitor próprio em TypeScript deverá reproduzir.
 
