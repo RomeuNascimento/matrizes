@@ -536,6 +536,14 @@ export class LibraryRepository {
       .all(...ids) as any;
   }
 
+  /** Caminho absoluto de um arquivo pelo hash do conteúdo (para regenerar miniatura). */
+  obterCaminhoPorHash(hash: string): string | undefined {
+    const row = this.db
+      .prepare("SELECT caminho_absoluto AS c FROM arquivos WHERE hash_sha256 = ? LIMIT 1")
+      .get(hash) as { c: string } | undefined;
+    return row?.c;
+  }
+
   // ---- Duplicados / erros ------------------------------------------------
 
   listarDuplicadosPorHash(): any[] {

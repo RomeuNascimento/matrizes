@@ -8,7 +8,8 @@ import { readFile } from "node:fs/promises";
 import { openDatabase } from "./db/database.ts";
 import { LibraryRepository } from "./db/repository.ts";
 import { registrarIpc } from "./ipc/register.ts";
-import { thumbPath } from "./thumbnails/cache.ts";
+import { thumbPath, ensureThumbnail } from "./thumbnails/cache.ts";
+import { readPes } from "./embroidery/reader.ts";
 import { checarIntegridade, fazerBackup, rotacionarBackups } from "./db/backup.ts";
 import type { Database as DB } from "better-sqlite3";
 
@@ -62,14 +63,25 @@ app.whenReady().then(() => {
 
   // Protocolo thumb://img/<hash>/<size> → arquivo de cache correspondente.
   protocol.handle("thumb", async (request) => {
+    const url = new URL(request.url);
+    const [, hash, size] = url.pathname.split("/");
+    const sizePx = Number(size);
+    const file = thumbPath(cacheDir, hash, sizePx);
     try {
-      const url = new URL(request.url);
-      const [, hash, size] = url.pathname.split("/");
-      const file = thumbPath(cacheDir, hash, Number(size));
       const bytes = await readFile(file);
       return new Response(bytes, { headers: { "content-type": "image/png" } });
     } catch {
-      return new Response("thumbnail não encontrada", { status: 404 });
+      // Cache ausente: tenta regenerar a partir do arquivo original (auto-cura).
+      // Cobre casos em que o PNG foi apagado ou não chegou a ser gravado.
+      try {
+        const caminho = repo.obterCaminhoPorHash(hash);
+        if (!caminho) return new Response("thumbnail não encontrada", { status: 404 });
+        const design = readPes(await readFile(caminho));
+        await ensureThumbnail(cacheDir, hash, sizePx, design);
+        return new Response(await readFile(file), { headers: { "content-type": "image/png" } });
+      } catch {
+        return new Response("thumbnail não encontrada", { status: 404 });
+      }
     }
   });
 
