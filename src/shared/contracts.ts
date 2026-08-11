@@ -73,9 +73,26 @@ export interface ResultadoImportacao {
   novos: number;
   atualizados: number;
   inalterados: number;
+  /** Arquivos que a usuária moveu/renomeou e foram religados ao catálogo. */
+  movidos: number;
+  /** Arquivos catalogados que não estão mais na pasta. */
+  sumidos: number;
   erros: number;
   duracaoMs: number;
   importacaoId: number;
+}
+
+export interface ArquivoSumido {
+  matrizId: number;
+  nomeExibido: string;
+  caminho: string;
+  hash: string;
+}
+
+export interface InfoApp {
+  versao: string;
+  pastaDados: string;
+  pastaBackups: string;
 }
 
 export interface Categoria {
@@ -141,6 +158,11 @@ export type RespostaCopia =
 export interface AppApi {
   selecionarPasta(): Promise<string | null>;
   importarPasta(caminho: string): Promise<ResultadoImportacao>;
+  /** Revarre todas as pastas monitoradas (novos, movidos e sumidos). */
+  atualizarBiblioteca(): Promise<ResultadoImportacao>;
+  /** Limpa a lista de problemas e revarre, dando nova chance aos arquivos. */
+  reprocessarErros(): Promise<ResultadoImportacao>;
+  cancelarImportacao(): Promise<void>;
   listarMatrizes(
     filtros: FiltrosBusca,
     ordenacao: Ordenacao,
@@ -159,6 +181,11 @@ export interface AppApi {
   listarArvorePastas(): Promise<PastaNode[]>;
   listarDuplicados(): Promise<GrupoDuplicado[]>;
   listarErros(): Promise<ErroProcessamento[]>;
+  listarSumidos(): Promise<ArquivoSumido[]>;
+  /** Apaga linhas do catálogo (nunca arquivos). Sem ids, remove todos os sumidos. */
+  removerDoCatalogo(matrizIds?: number[]): Promise<number>;
+  removerPasta(pastaId: number): Promise<number>;
+  infoApp(): Promise<InfoApp>;
   abrirLocal(matrizId: number): Promise<void>;
   revelarCaminho(caminho: string): Promise<void>;
   estadoInicial(): Promise<{ temBiblioteca: boolean }>;

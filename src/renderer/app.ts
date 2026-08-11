@@ -3,8 +3,8 @@
  * sistema diretamente.
  */
 import type {
-  AppApi, MatrizResumo, FiltrosBusca, Ordenacao, PastaNode,
-  GrupoDuplicado, ErroProcessamento, Etiqueta,
+  AppApi, MatrizResumo, FiltrosBusca, Ordenacao, PastaNode, ResultadoImportacao,
+  GrupoDuplicado, ErroProcessamento, Etiqueta, ArquivoSumido, Pasta,
 } from "../shared/contracts.ts";
 
 declare global {
@@ -51,17 +51,27 @@ const fmtMm = (l: number | null, a: number | null) =>
   l != null && a != null ? `${l} × ${a} mm` : "—";
 const fmtNum = (n: number | null) => (n == null ? "—" : n.toLocaleString("pt-BR"));
 
+/**
+ * Quantos desenhos vêm do banco por vez. A grade carrega mais sozinha ao rolar
+ * até o fim, então bibliotecas grandes aparecem inteiras sem travar a janela.
+ */
+const TAMANHO_PAGINA = 300;
+
 const estado = {
   filtros: {} as FiltrosBusca,
   ordenacao: { campo: "nome", direcao: "asc" } as Ordenacao,
   selecionada: null as number | null,
   filtroAtivo: "todos" as string,
-  modo: "biblioteca" as "biblioteca" | "duplicados" | "erros",
+  modo: "biblioteca" as "biblioteca" | "duplicados" | "erros" | "sumidos" | "config",
   expandidas: new Set<string>(),
   // Seleção múltipla (lote)
   marcadas: new Set<number>(),
   itensAtuais: [] as MatrizResumo[],
   ultimoIndice: null as number | null,
+  // Paginação da grade
+  total: 0,
+  carregando: false,
+  fim: false,
 };
 
 // ---- Inicialização --------------------------------------------------------
@@ -76,6 +86,27 @@ async function iniciar() {
 
   $<HTMLButtonElement>("#btn-escolher").onclick = escolherEImportar;
   $<HTMLButtonElement>("#btn-add-pasta").onclick = escolherEImportar;
+  $<HTMLButtonElement>("#btn-atualizar").onclick = atualizarBiblioteca;
+  $<HTMLButtonElement>("#btn-config").onclick = () => {
+    estado.modo = "config";
+    estado.filtroAtivo = "config";
+    montarNav();
+    recarregar();
+  };
+  $<HTMLButtonElement>("#prog-cancelar").onclick = () => {
+    parando = true;
+    $("#prog-titulo").textContent = "Parando… (terminando os que já começaram)";
+    api.cancelarImportacao();
+  };
+
+  // Rolar até perto do fim traz a próxima leva de desenhos.
+  const grade = $("#grade");
+  grade.addEventListener("scroll", () => {
+    if (estado.modo !== "biblioteca") return;
+    if (grade.scrollTop + grade.clientHeight >= grade.scrollHeight - 600) {
+      carregarPagina(false);
+    }
+  });
 
   const busca = $<HTMLInputElement>("#busca");
   let t: ReturnType<typeof setTimeout>;
@@ -135,22 +166,51 @@ async function escolherEImportar() {
   if (!pasta) return;
   $("#welcome").hidden = true;
   $("#app").hidden = false;
+  await comProgresso(() => api.importarPasta(pasta));
+}
+
+/** Revarre as pastas já monitoradas: acha desenhos novos, movidos e sumidos. */
+async function atualizarBiblioteca() {
+  await comProgresso(() => api.atualizarBiblioteca());
+}
+
+/** Roda uma importação mostrando o overlay de progresso e o resumo no fim. */
+async function comProgresso(acao: () => Promise<ResultadoImportacao>) {
+  parando = false;
+  $("#prog-titulo").textContent = "Procurando seus bordados…";
+  $<HTMLElement>("#prog-barra").style.width = "0%";
   $("#progresso").hidden = false;
-  const resultado = await api.importarPasta(pasta);
-  $("#progresso").hidden = true;
+  let resultado: ResultadoImportacao;
+  try {
+    resultado = await acao();
+  } finally {
+    parando = false;
+    $("#progresso").hidden = true;
+  }
   await montarNav();
   await recarregar();
-  const c = $("#contagem");
-  c.textContent =
-    `Importação concluída: ${resultado.novos} novos, ${resultado.atualizados} atualizados, ` +
-    `${resultado.erros} com erro (${(resultado.duracaoMs / 1000).toFixed(1)}s).`;
+  if (estado.modo === "biblioteca") $("#contagem").textContent = resumoImportacao(resultado);
 }
+
+function resumoImportacao(r: ResultadoImportacao): string {
+  const partes = [`${r.novos} novo(s)`];
+  if (r.atualizados) partes.push(`${r.atualizados} atualizado(s)`);
+  if (r.movidos) partes.push(`${r.movidos} movido(s) de lugar`);
+  if (r.sumidos) partes.push(`${r.sumidos} sumido(s)`);
+  if (r.erros) partes.push(`${r.erros} com problema`);
+  const cabeca = r.status === "cancelada" ? "Parou no meio" : "Pronto";
+  return `${cabeca}: ${partes.join(", ")} (${(r.duracaoMs / 1000).toFixed(1)}s).`;
+}
+
+/** Verdadeiro entre o clique em "Parar" e o fim da importação. */
+let parando = false;
 
 function atualizarProgresso(p: {
   fase: string; total: number; processados: number; erros: number; arquivoAtual: string | null;
 }) {
   const pct = p.total > 0 ? Math.round((p.processados / p.total) * 100) : 0;
   $<HTMLElement>("#prog-barra").style.width = `${pct}%`;
+  if (parando) return; // não sobrescreve o aviso de "Parando…"
   $("#prog-titulo").textContent = p.fase === "varrendo" ? "Procurando seus bordados…" : "Lendo seus bordados…";
   $("#prog-texto").textContent =
     p.total > 0
@@ -201,8 +261,8 @@ async function montarNav() {
   }
 
   // Grupo de etiquetas em uso (organização por marcas próprias da usuária)
-  const [dups, erros, etiquetas] = await Promise.all([
-    api.listarDuplicados(), api.listarErros(), api.listarEtiquetas(),
+  const [dups, erros, sumidos, etiquetas] = await Promise.all([
+    api.listarDuplicados(), api.listarErros(), api.listarSumidos(), api.listarEtiquetas(),
   ]);
   const tagsUsadas = (etiquetas as Etiqueta[]).filter((e) => e.total > 0);
   if (tagsUsadas.length) {
@@ -215,8 +275,8 @@ async function montarNav() {
     }
   }
 
-  // Grupo de manutenção (duplicados / arquivos com problema)
-  if (dups.length || erros.length) {
+  // Grupo de manutenção (repetidos / com problema / sumidos)
+  if (dups.length || erros.length || sumidos.length) {
     const g = document.createElement("div");
     g.className = "grupo";
     g.textContent = "Manutenção";
@@ -226,6 +286,9 @@ async function montarNav() {
     }
     if (erros.length) {
       botao("⚠ Com problema", "erros", erros.length, () => { estado.modo = "erros"; });
+    }
+    if (sumidos.length) {
+      botao("⌀ Sumidos", "sumidos", sumidos.length, () => { estado.modo = "sumidos"; });
     }
   }
 }
@@ -271,68 +334,123 @@ function renderPasta(container: HTMLElement, node: PastaNode, nivel: number) {
 async function recarregar() {
   if (estado.modo === "duplicados") return renderDuplicados();
   if (estado.modo === "erros") return renderErros();
+  if (estado.modo === "sumidos") return renderSumidos();
+  if (estado.modo === "config") return renderConfiguracoes();
+  return carregarPagina(true);
+}
 
-  const { total, itens } = await api.listarMatrizes(estado.filtros, estado.ordenacao, {
-    offset: 0, limite: 500,
-  });
-  estado.itensAtuais = itens as MatrizResumo[];
-  // Descarta da seleção itens que saíram da lista atual (filtro/busca mudou)
-  const visiveis = new Set(estado.itensAtuais.map((m) => m.id));
-  for (const id of [...estado.marcadas]) if (!visiveis.has(id)) estado.marcadas.delete(id);
+/**
+ * Fila de uma posição só: garante que duas cargas nunca se misturem na grade.
+ * Um recarregar sempre entra na fila (não pode ser perdido); um "carregar mais"
+ * do rolar é descartado se já houver carga em andamento.
+ */
+let fila: Promise<void> = Promise.resolve();
 
+function carregarPagina(reiniciar: boolean): Promise<void> {
+  if (!reiniciar && (estado.carregando || estado.fim)) return Promise.resolve();
+  estado.carregando = true;
+  const anterior = fila;
+  fila = (async () => {
+    try {
+      await anterior;
+      await executarCarga(reiniciar);
+    } finally {
+      estado.carregando = false;
+    }
+  })();
+  return fila;
+}
+
+/**
+ * Traz uma leva de desenhos do banco. Com `reiniciar`, limpa a grade e começa
+ * do zero (troca de filtro, busca ou ordenação); sem ele, acrescenta a próxima
+ * leva ao final — é o que o rolar-até-embaixo usa.
+ */
+async function executarCarga(reiniciar: boolean) {
   const grade = $("#grade");
-  const vazio = $("#vazio");
-  grade.classList.remove("lista");
-  $("#contagem").textContent = `${total} ${total === 1 ? "desenho" : "desenhos"}`;
-  grade.innerHTML = "";
+  const offset = reiniciar ? 0 : estado.itensAtuais.length;
+  const { total, itens } = await api.listarMatrizes(estado.filtros, estado.ordenacao, {
+    offset, limite: TAMANHO_PAGINA,
+  });
 
-  if (itens.length === 0) {
+  if (reiniciar) {
+    estado.itensAtuais = [];
+    grade.innerHTML = "";
+    grade.classList.remove("lista");
+    grade.scrollTop = 0;
+    // Descarta da seleção itens que saíram da lista (filtro ou busca mudou)
+    const visiveis = new Set((itens as MatrizResumo[]).map((m) => m.id));
+    for (const id of [...estado.marcadas]) if (!visiveis.has(id)) estado.marcadas.delete(id);
+  }
+
+  const inicio = estado.itensAtuais.length;
+  estado.itensAtuais.push(...(itens as MatrizResumo[]));
+  estado.total = total;
+  estado.fim = estado.itensAtuais.length >= total || itens.length === 0;
+
+  const vazio = $("#vazio");
+  if (estado.itensAtuais.length === 0) {
     vazio.hidden = false;
     vazio.textContent = estado.filtros.busca
       ? `Nenhum desenho encontrado para "${estado.filtros.busca}".`
       : "Nenhum desenho com esses filtros.";
-    atualizarBarraLote();
-    return;
+  } else {
+    vazio.hidden = true;
+    const frag = document.createDocumentFragment();
+    for (let i = inicio; i < estado.itensAtuais.length; i++) {
+      frag.appendChild(criarCard(estado.itensAtuais[i], i));
+    }
+    grade.appendChild(frag);
   }
-  vazio.hidden = true;
 
-  estado.itensAtuais.forEach((m, indice) => {
-    const card = document.createElement("article");
-    card.className = "card" +
-      (estado.selecionada === m.id ? " sel" : "") +
-      (estado.marcadas.has(m.id) ? " marc" : "");
-    const flags =
-      (m.favorita ? '<span class="chip on">♥</span>' : "") +
-      (m.testada ? '<span class="chip on">testada</span>' : "");
-    card.innerHTML = `
-      <label class="check" title="Selecionar"><input type="checkbox" ${estado.marcadas.has(m.id) ? "checked" : ""}></label>
-      <div class="thumb">${m.miniatura256 ? `<img loading="lazy" src="${thumbUrl(m.hash)}" alt="${m.nomeExibido}">` : "🧵"}</div>
-      <div class="meta">
-        <div class="nome" title="${m.nomeExibido}">${m.nomeExibido}</div>
-        <div class="sub">${fmtMm(m.larguraMm, m.alturaMm)}</div>
-        <div class="flags">${flags}</div>
-      </div>`;
-
-    // A caixinha (e sua área) alterna a seleção sem abrir os detalhes
-    const check = card.querySelector<HTMLElement>(".check")!;
-    check.onclick = (ev) => {
-      ev.stopPropagation();
-      alternarMarcada(m.id, indice, ev.shiftKey);
-    };
-
-    card.onclick = (ev) => {
-      // Ctrl/Cmd+clique ou Shift+clique selecionam; clique simples abre detalhes
-      if (ev.ctrlKey || ev.metaKey || ev.shiftKey) {
-        alternarMarcada(m.id, indice, ev.shiftKey);
-      } else {
-        abrirDetalhes(m.id);
-      }
-    };
-    card.ondblclick = () => api.abrirLocal(m.id);
-    grade.appendChild(card);
-  });
-
+  atualizarContagem();
   atualizarBarraLote();
+}
+
+function atualizarContagem() {
+  const total = estado.total;
+  const mostrando = estado.itensAtuais.length;
+  const palavra = total === 1 ? "desenho" : "desenhos";
+  $("#contagem").textContent =
+    mostrando < total
+      ? `${total} ${palavra} — mostrando os ${mostrando} primeiros (role para ver mais)`
+      : `${total} ${palavra}`;
+}
+
+function criarCard(m: MatrizResumo, indice: number): HTMLElement {
+  const card = document.createElement("article");
+  card.className = "card" +
+    (estado.selecionada === m.id ? " sel" : "") +
+    (estado.marcadas.has(m.id) ? " marc" : "");
+  const flags =
+    (m.favorita ? '<span class="chip on">♥</span>' : "") +
+    (m.testada ? '<span class="chip on">testada</span>' : "");
+  card.innerHTML = `
+    <label class="check" title="Selecionar"><input type="checkbox" ${estado.marcadas.has(m.id) ? "checked" : ""}></label>
+    <div class="thumb">${m.miniatura256 ? `<img loading="lazy" src="${thumbUrl(m.hash)}" alt="${esc(m.nomeExibido)}">` : "🧵"}</div>
+    <div class="meta">
+      <div class="nome" title="${esc(m.nomeExibido)}">${esc(m.nomeExibido)}</div>
+      <div class="sub">${fmtMm(m.larguraMm, m.alturaMm)}</div>
+      <div class="flags">${flags}</div>
+    </div>`;
+
+  // A caixinha (e sua área) alterna a seleção sem abrir os detalhes
+  const check = card.querySelector<HTMLElement>(".check")!;
+  check.onclick = (ev) => {
+    ev.stopPropagation();
+    alternarMarcada(m.id, indice, ev.shiftKey);
+  };
+
+  card.onclick = (ev) => {
+    // Ctrl/Cmd+clique ou Shift+clique selecionam; clique simples abre detalhes
+    if (ev.ctrlKey || ev.metaKey || ev.shiftKey) {
+      alternarMarcada(m.id, indice, ev.shiftKey);
+    } else {
+      abrirDetalhes(m.id);
+    }
+  };
+  card.ondblclick = () => api.abrirLocal(m.id);
+  return card;
 }
 
 // ---- Seleção múltipla (lote) ---------------------------------------------
@@ -482,6 +600,23 @@ async function renderErros() {
 
   grade.innerHTML = "";
   grade.classList.add("lista");
+
+  const topo = document.createElement("div");
+  topo.className = "manut-topo";
+  topo.innerHTML =
+    `<p class="nota">Estes arquivos não puderam ser lidos. Se você já consertou ` +
+    `ou substituiu algum, peça para tentar de novo.</p>`;
+  const btnTentar = document.createElement("button");
+  btnTentar.className = "secundario";
+  btnTentar.textContent = "↻ Tentar de novo";
+  btnTentar.onclick = async () => {
+    estado.modo = "biblioteca";
+    estado.filtroAtivo = "todos";
+    await comProgresso(() => api.reprocessarErros());
+  };
+  topo.appendChild(btnTentar);
+  grade.appendChild(topo);
+
   for (const e of erros as ErroProcessamento[]) {
     const item = document.createElement("article");
     item.className = "manut erro";
@@ -496,6 +631,137 @@ async function renderErros() {
   }
   grade.querySelectorAll<HTMLButtonElement>("button[data-caminho]").forEach((b) => {
     b.onclick = () => api.revelarCaminho(b.dataset.caminho!);
+  });
+}
+
+/**
+ * Desenhos cujo arquivo original não está mais na pasta (apagado ou levado para
+ * fora dela). Ficam guardados — com favorita, etiquetas e nome — até a usuária
+ * decidir tirá-los do catálogo. Nenhum arquivo é apagado por aqui.
+ */
+async function renderSumidos() {
+  limparSelecao();
+  $("#detalhes").hidden = true;
+  const sumidos = (await api.listarSumidos()) as ArquivoSumido[];
+  const grade = $("#grade");
+  const vazio = $("#vazio");
+  $("#contagem").textContent = `${sumidos.length} desenho(s) sumido(s)`;
+  vazio.hidden = sumidos.length > 0;
+  if (!sumidos.length) {
+    vazio.textContent = "Nenhum desenho sumido. 🎉";
+    grade.innerHTML = "";
+    return;
+  }
+
+  grade.innerHTML = "";
+  grade.classList.add("lista");
+
+  const topo = document.createElement("div");
+  topo.className = "manut-topo";
+  topo.innerHTML =
+    `<p class="nota">Estes desenhos estavam no catálogo, mas o arquivo não está mais ` +
+    `na pasta. Se você só mudou os arquivos de lugar, clique em <strong>Atualizar ` +
+    `biblioteca</strong> que eles voltam sozinhos, com favoritas e etiquetas.</p>`;
+  const btnTodos = document.createElement("button");
+  btnTodos.className = "secundario";
+  btnTodos.textContent = "Tirar todos do catálogo";
+  btnTodos.onclick = async () => {
+    if (!confirm(
+      `Tirar ${sumidos.length} desenho(s) do catálogo?\n\n` +
+      `Isso apaga só a ficha aqui dentro do aplicativo — nenhum arquivo do seu ` +
+      `computador é tocado.`,
+    )) return;
+    await api.removerDoCatalogo();
+    estado.modo = "biblioteca";
+    estado.filtroAtivo = "todos";
+    await montarNav();
+    await recarregar();
+  };
+  topo.appendChild(btnTodos);
+  grade.appendChild(topo);
+
+  for (const s of sumidos) {
+    const item = document.createElement("article");
+    item.className = "manut";
+    item.innerHTML = `
+      <div class="manut-thumb"><img loading="lazy" src="${thumbUrl(s.hash)}" alt=""></div>
+      <div class="manut-corpo">
+        <div class="manut-titulo">${esc(s.nomeExibido)}</div>
+        <div class="manut-msg" title="${esc(s.caminho)}">${esc(s.caminho)}</div>
+        <button class="link" data-matriz="${s.matrizId}">Tirar do catálogo</button>
+      </div>`;
+    grade.appendChild(item);
+  }
+  grade.querySelectorAll<HTMLButtonElement>("button[data-matriz]").forEach((b) => {
+    b.onclick = async () => {
+      await api.removerDoCatalogo([Number(b.dataset.matriz)]);
+      await montarNav();
+      await renderSumidos();
+    };
+  });
+}
+
+// ---- Configurações --------------------------------------------------------
+
+async function renderConfiguracoes() {
+  limparSelecao();
+  $("#detalhes").hidden = true;
+  const [pastas, info] = await Promise.all([api.listarPastas(), api.infoApp()]);
+  const grade = $("#grade");
+  $("#vazio").hidden = true;
+  $("#contagem").textContent = "Configurações";
+  grade.innerHTML = "";
+  grade.classList.add("lista");
+
+  const linhasPastas = (pastas as Pasta[])
+    .map(
+      (p) =>
+        `<li><span class="dup-arq" title="${esc(p.caminho)}">${esc(p.caminho)}</span>` +
+        `<span class="nota">${p.total} desenho(s)</span>` +
+        `<button class="link" data-remover-pasta="${p.id}">Parar de acompanhar</button></li>`,
+    )
+    .join("");
+
+  const bloco = document.createElement("div");
+  bloco.className = "config";
+  bloco.innerHTML = `
+    <section class="manut">
+      <div class="manut-corpo">
+        <div class="manut-titulo">Suas pastas de bordado</div>
+        <p class="nota">O aplicativo só lê estas pastas. Ele nunca move, renomeia
+          ou apaga nada dentro delas.</p>
+        <ul class="dup-lista">${linhasPastas || "<li class='nota'>Nenhuma pasta ainda.</li>"}</ul>
+      </div>
+    </section>
+    <section class="manut">
+      <div class="manut-corpo">
+        <div class="manut-titulo">Seus dados</div>
+        <p class="nota">Favoritas, etiquetas e nomes ficam guardados aqui, separados
+          dos arquivos de bordado. Uma cópia de segurança é feita toda vez que você
+          fecha o aplicativo.</p>
+        <dl class="config-dl">
+          <dt>Catálogo</dt><dd title="${esc(info.pastaDados)}">${esc(info.pastaDados)}</dd>
+          <dt>Cópias de segurança</dt><dd title="${esc(info.pastaBackups)}">${esc(info.pastaBackups)}</dd>
+          <dt>Versão</dt><dd>${esc(info.versao)}</dd>
+        </dl>
+      </div>
+    </section>`;
+  grade.appendChild(bloco);
+
+  bloco.querySelectorAll<HTMLButtonElement>("button[data-remover-pasta]").forEach((b) => {
+    b.onclick = async () => {
+      const pasta = (pastas as Pasta[]).find((p) => p.id === Number(b.dataset.removerPasta));
+      if (!pasta) return;
+      if (!confirm(
+        `Parar de acompanhar esta pasta?\n\n${pasta.caminho}\n\n` +
+        `Os ${pasta.total} desenho(s) dela saem do aplicativo (junto com favoritas e ` +
+        `etiquetas). Nenhum arquivo do seu computador é apagado — para trazer tudo ` +
+        `de volta, é só adicionar a pasta outra vez.`,
+      )) return;
+      await api.removerPasta(pasta.id);
+      await montarNav();
+      await renderConfiguracoes();
+    };
   });
 }
 

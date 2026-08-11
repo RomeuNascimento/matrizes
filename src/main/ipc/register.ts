@@ -2,20 +2,52 @@
  * Registro dos handlers de IPC. Cada canal corresponde a um método do contrato
  * (src/shared/contracts.ts). O renderer nunca acessa banco ou disco direto.
  */
-import { ipcMain, dialog, shell, BrowserWindow } from "electron";
+import { app, ipcMain, dialog, shell, BrowserWindow } from "electron";
 import type { LibraryRepository } from "../db/repository.ts";
-import { importarPasta } from "../services/importer.ts";
+import { importarPasta, type ResultadoImportacao } from "../services/importer.ts";
 import { copiarParaDestino, EspacoInsuficienteError } from "../services/copier.ts";
 import { listarDrivesRemoviveis } from "../filesystem/drives.ts";
 
 export interface IpcContext {
   repo: LibraryRepository;
   cacheDir: string;
+  dirBackups: string;
   getWindow: () => BrowserWindow | null;
 }
 
 export function registrarIpc(ctx: IpcContext): void {
   const { repo, cacheDir } = ctx;
+
+  // Cancelamento: a importação em curso consulta esta bandeira entre arquivos.
+  let cancelarPedido = false;
+
+  const rodarImportacao = async (caminhos: string[]): Promise<ResultadoImportacao> => {
+    cancelarPedido = false;
+    const soma: ResultadoImportacao = {
+      status: "concluida", total: 0, novos: 0, atualizados: 0, inalterados: 0,
+      movidos: 0, sumidos: 0, erros: 0, duracaoMs: 0, importacaoId: 0,
+    };
+    for (const caminho of caminhos) {
+      const r = await importarPasta({ repo, cacheDir }, caminho, {
+        cancelado: () => cancelarPedido,
+        onProgresso: (p) => ctx.getWindow()?.webContents.send("importacao:progresso", p),
+      });
+      soma.total += r.total;
+      soma.novos += r.novos;
+      soma.atualizados += r.atualizados;
+      soma.inalterados += r.inalterados;
+      soma.movidos += r.movidos;
+      soma.sumidos += r.sumidos;
+      soma.erros += r.erros;
+      soma.duracaoMs += r.duracaoMs;
+      soma.importacaoId = r.importacaoId;
+      if (r.status === "cancelada") {
+        soma.status = "cancelada";
+        break;
+      }
+    }
+    return soma;
+  };
 
   ipcMain.handle("selecionarPasta", async () => {
     const win = ctx.getWindow();
@@ -26,12 +58,23 @@ export function registrarIpc(ctx: IpcContext): void {
     return res.canceled || res.filePaths.length === 0 ? null : res.filePaths[0];
   });
 
-  ipcMain.handle("importarPasta", async (_e, caminho: string) => {
-    return importarPasta({ repo, cacheDir }, caminho, {
-      onProgresso: (p) => {
-        ctx.getWindow()?.webContents.send("importacao:progresso", p);
-      },
-    });
+  ipcMain.handle("importarPasta", (_e, caminho: string) => rodarImportacao([caminho]));
+
+  ipcMain.handle("atualizarBiblioteca", () =>
+    rodarImportacao(repo.listarPastas().filter((p: any) => p.ativa).map((p: any) => p.caminho)),
+  );
+
+  // "Tentar de novo": zera a lista de problemas e revarre. Quem falhar de novo
+  // volta para a lista; quem tiver sido consertado sai dela.
+  ipcMain.handle("reprocessarErros", () => {
+    repo.limparErros();
+    return rodarImportacao(
+      repo.listarPastas().filter((p: any) => p.ativa).map((p: any) => p.caminho),
+    );
+  });
+
+  ipcMain.handle("cancelarImportacao", () => {
+    cancelarPedido = true;
   });
 
   ipcMain.handle("listarMatrizes", (_e, filtros, ordenacao, pagina) =>
@@ -58,6 +101,17 @@ export function registrarIpc(ctx: IpcContext): void {
   ipcMain.handle("listarArvorePastas", () => repo.listarArvorePastas());
   ipcMain.handle("listarDuplicados", () => repo.listarDuplicadosPorHash());
   ipcMain.handle("listarErros", () => repo.listarErros());
+  ipcMain.handle("listarSumidos", () => repo.listarAusentes());
+  ipcMain.handle("removerDoCatalogo", (_e, matrizIds?: number[]) =>
+    repo.removerDoCatalogo(matrizIds),
+  );
+  ipcMain.handle("removerPasta", (_e, pastaId: number) => repo.removerPasta(pastaId));
+
+  ipcMain.handle("infoApp", () => ({
+    versao: app.getVersion(),
+    pastaDados: app.getPath("userData"),
+    pastaBackups: ctx.dirBackups,
+  }));
 
   ipcMain.handle("abrirLocal", (_e, matrizId: number) => {
     const d = repo.obterDetalhes(matrizId);

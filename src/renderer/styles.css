@@ -60,6 +60,8 @@ button { font: inherit; cursor: pointer; }
 .marca { font-family: "Iowan Old Style", Palatino, Georgia, serif; font-size: 1.3rem; font-weight: 600; }
 .marca-flor { margin-right: 4px; }
 .nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.lateral-acoes { display: grid; gap: 6px; }
+.lateral-acoes button { text-align: left; font-size: .9rem; padding: 9px 12px; }
 .nav .grupo { font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-soft); margin: 12px 6px 4px; }
 .nav button {
   display: flex; justify-content: space-between; align-items: center; gap: 8px;
@@ -159,6 +161,20 @@ select { padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px;
 .manut-corpo { min-width: 0; flex: 1; }
 .manut-titulo { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .manut-msg { color: var(--ink-soft); font-size: .85rem; margin: 4px 0 8px; }
+/* Cabeçalho das telas de manutenção (explicação + ação geral) */
+.manut-topo {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  flex-wrap: wrap; margin-bottom: 14px;
+}
+.manut-topo p { margin: 0; flex: 1 1 320px; }
+
+/* Configurações */
+.config { display: grid; gap: 12px; }
+.config .manut { display: block; }
+.config-dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 10px 0 0; font-size: .85rem; }
+.config-dl dt { color: var(--ink-soft); }
+.config-dl dd { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 .dup-lista { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
 .dup-lista li { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: .85rem; }
 .dup-arq { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -192,6 +208,7 @@ select { padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px;
 .modal-input, #modal-input { width: 100%; padding: 11px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); color: var(--ink); font-size: 1rem; }
 #modal-input:focus { outline: 2px solid var(--rose); outline-offset: 1px; border-color: transparent; }
 .modal-acoes { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.modal-acoes.centro { justify-content: center; }
 
 /* Progresso */
 .progresso { position: fixed; inset: 0; background: rgba(20,22,18,.55); display: grid; place-items: center; }

@@ -1,18 +1,16 @@
 # Status de implementação — Matrizes
 
-Última atualização: fim da sessão em que o app foi rodado com a biblioteca
-real da usuária (~1807 matrizes) no Windows.
+Última atualização: sessão de preparação para venda (v1.0.0).
 
 Legenda: ✅ pronto e testado · 🟡 backend pronto, falta tela · ⬜ pendente ·
-🪟 requer máquina Windows.
+🪟 requer máquina Windows · 💬 decisão de negócio pendente.
 
 ## Onde estamos
 
-O app **está funcionando na máquina Windows da usuária**, lendo a biblioteca
-real dela (~1807 matrizes, incluindo arquivos PES v1 a v9). Galeria com
-miniaturas, busca, navegação por subpastas, detalhes, favoritar/testar,
-renomear e cópia para pendrive — tudo operante. **63 testes automatizados**
-passando; typecheck e build limpos.
+O app **funciona na máquina Windows da usuária** com a biblioteca real dela
+(~1807 matrizes, PES v1 a v9). **70 testes automatizados** passando; typecheck e
+build limpos. A fábrica de instalador (GitHub Actions) está pronta, mas ainda
+não rodou.
 
 ## Núcleo (pronto e testado)
 
@@ -20,134 +18,94 @@ passando; typecheck e build limpos.
 |---|---|---|
 | Leitor de `.PES` (v1–v10, paleta embutida) | ✅ | `src/main/embroidery/` |
 | Paridade com oráculo PyEmbroidery (37/37) | ✅ | `tests/unit/pes-reader.test.ts` |
-| Miniaturas SVG→PNG nas cores reais | ✅ | `src/main/thumbnails/` |
+| Miniaturas SVG→PNG nas cores reais, fundo tipo tecido | ✅ | `src/main/thumbnails/` |
+| Auto-cura de miniatura (regenera cache faltante) | ✅ | protocolo `thumb://` em `index.ts` |
 | Banco SQLite: esquema, migrações, seeds | ✅ | `src/main/db/` |
-| Busca sem acento (FTS5) | ✅ | `repository.ts` |
+| Busca sem acento (FTS5, com conteúdo) | ✅ | `repository.ts` |
 | Varredura recursiva + hash + import incremental | ✅ | `filesystem/`, `services/importer.ts` |
-| **Navegação por subpastas** (árvore recolhível) | ✅ | `repository.listarArvorePastas` + `renderer` |
-| **Renomear** (nome exibido; janelinha própria, não `prompt()`) | ✅ | `pedirTexto` em `renderer/app.ts` |
-| **Miniaturas com fundo claro** (desenhos escuros visíveis) | ✅ | `--fabric` em `styles.css` |
-| **Auto-cura de miniatura** (regenera cache faltante) | ✅ | protocolo `thumb://` em `index.ts` |
-| **Painel de detalhes fixo** (não some ao rolar; só a grade rola) | ✅ | `overflow:hidden` + `min-height:0` |
-| **FTS com conteúdo** (renomear/mover não quebram a busca) | ✅ | migração 3 em `migrations.ts` |
-| **Seleção múltipla na grade** (caixa no card, Ctrl/Shift+clique, Ctrl+A, Esc) | ✅ | `renderer/app.ts` |
-| **Ações em lote**: favoritar, marcar testada, renomear e copiar | ✅ | barra flutuante em `renderer/app.ts` |
-| **Tela de repetidos** (agrupa idênticos por hash, abre pasta) | ✅ | `renderDuplicados` em `renderer/app.ts` |
-| **Tela de arquivos com problema** (motivo + abrir pasta) | ✅ | `renderErros` em `renderer/app.ts` |
-| **Etiquetas**: criar/aplicar/remover + **filtrar pela lateral** | ✅ | grupo "Etiquetas" em `renderer/app.ts` |
-| Favoritas / Testadas / Não testadas (lateral) | ✅ | `renderer/app.ts` |
+| **Galeria paginada (rola e carrega mais)** | ✅ | `carregarPagina` em `renderer/app.ts` |
+| **Atualizar biblioteca** (revarre as pastas monitoradas) | ✅ | `atualizarBiblioteca` no IPC |
+| **Religação de arquivo movido/renomeado** (por hash) | ✅ | `importer.ts` + `tests/integration/sincronizacao.test.ts` |
+| **Tela de sumidos** (arquivo saiu da pasta) | ✅ | `renderSumidos` em `renderer/app.ts` |
+| **Cancelar importação** ("Parar") | ✅ | `cancelarImportacao` no IPC |
+| **Tela de configurações** (pastas, dados, versão) | ✅ | `renderConfiguracoes` em `renderer/app.ts` |
+| **Parar de acompanhar uma pasta** | ✅ | `repo.removerPasta` |
+| Navegação por subpastas (árvore recolhível) | ✅ | `repository.listarArvorePastas` + `renderer` |
+| Renomear (janelinha própria, não `prompt()`) | ✅ | `pedirTexto` em `renderer/app.ts` |
+| Painel de detalhes fixo (só a grade rola) | ✅ | `overflow:hidden` + `min-height:0` |
+| Seleção múltipla + ações em lote | ✅ | `renderer/app.ts` |
+| Tela de repetidos (agrupa idênticos por hash) | ✅ | `renderDuplicados` |
+| Tela de arquivos com problema + **tentar de novo** | ✅ | `renderErros` + `reprocessarErros` |
+| Etiquetas: criar/aplicar/remover + filtrar pela lateral | ✅ | `renderer/app.ts` |
+| Favoritas / Testadas / Não testadas | ✅ | `renderer/app.ts` |
 | Cópia segura para pendrive | ✅ | `services/copier.ts` |
 | Backup + verificação de integridade | ✅ | `db/backup.ts` |
-| App Electron (build + typecheck) | ✅ | `src/main/index.ts`, `src/renderer/` |
+| **Ícone do app** (flor, .png + .ico multi-resolução) | ✅ | `build/`, `scripts/gerar-icone.ts` |
+| **Fábrica de instalador** (GitHub Actions, Windows) | ✅ | `.github/workflows/instalador.yml` |
+| **Guia de instalação para a compradora** | ✅ | `docs/INSTALACAO.md` |
 
-## Falta tela (backend pronto)
+## O que ainda falta
 
 | Item | Estado | Observação |
 |---|---|---|
-| Categorias (organizar em pastas próprias) | 🟡 | `listarCategorias()` pronto; falta atribuir na UI |
-| Tela de configurações | ⬜ | — |
+| Rodar a fábrica e testar o instalador no Windows | 🪟 | Actions → "Instalador do Windows" → Run workflow |
+| Testar com pendrive real | 🪟 | fluxo de cópia já tem teste de integração |
+| Categorias na UI | 🟡 | `listarCategorias()` pronto; etiquetas hoje cobrem o caso |
+| Assinatura de código (evita aviso do SmartScreen) | 💬 | certificado ~US$ 100–400/ano — ver `docs/INSTALACAO.md` §2 |
+| Proteção contra cópia / licença | 💬 | hoje o instalador é livre: quem tiver o .exe instala |
+| Auto-update | ⬜ | previsto para v1.1; hoje a atualização é reinstalar |
+| Teste de carga com 50k arquivos sintéticos | ⬜ | biblioteca real (1807) roda bem |
+| Smoke E2E da janela Electron | ⬜ | não roda neste container (headless) |
 
-## Pendências de máquina Windows
+## Como sai o instalador
 
-| Item | Estado |
-|---|---|
-| Gerar/testar instalador NSIS (`npm run dist`) | 🪟 |
-| Testar com pendrive real | 🪟 |
-| (Opcional) fábrica de instalador via GitHub Actions | ⬜ (usuária optou por seguir no modo git por ora) |
+1. GitHub → aba **Actions** → **Instalador do Windows** → **Run workflow**.
+2. Ao terminar, baixar o artefato `Matrizes-instalador-windows`.
+3. Para publicar uma versão: `git tag v1.0.0 && git push origin v1.0.0` — a
+   Release é criada com o `.exe` anexado.
 
-## Ideias discutidas / adiadas
+O workflow roda testes + typecheck no Linux antes de empacotar; se algo quebrar,
+não gera instalador.
 
-- **IA para auto-organizar por tema** (floral, moldura, letra…): possível, mas
-  precisa de internet e tem custo → adiada como "turbo" opcional; começar pela
-  organização por subpastas (feita) e nomes de pasta.
-- **Instalador de clique-duplo + auto-update**: objetivo final (Fase 5). Depende
-  de build no Windows — planejado via GitHub Actions quando o app estabilizar.
-
-## Miniaturas "pretas" — RESOLVIDO (era duas coisas)
-
-Diagnosticado com a biblioteca real (via `npm run inspect`):
-
-1. **Miniaturas rasgadas** (100, 101…): o PNG do cache faltava e o app mostrava
-   imagem quebrada. → Corrigido: o protocolo `thumb://` **regenera na hora** a
-   partir do original (auto-cura). ✅
-2. **Molduras pretas**: NÃO é bug. O `inspect` de uma moldura v9 mostrou
-   `Blocos cor: 1`, `Cores/bloco: #000000`, paleta embutida `#000000 #ED171F` —
-   ou seja, o arquivo diz que a linha é **preta mesmo** (conferido contra o
-   pyembroidery, que leria igual). O que atrapalhava era **preto sobre fundo
-   escuro** (sumia). → Corrigido: miniaturas agora têm **fundo claro tipo tecido**
-   (`--fabric`, claro nos dois temas), então o preto aparece como bordado em
-   pano. ✅
-
-O `inspect` foi reforçado e continua útil para outros casos: imprime versão,
-cores por bloco, **índices PEC crus**, **nº de cores da paleta embutida** e gera
-o PNG (`arquivo.thumb.png`) ao lado.
-
-## Como a usuária roda o app (contexto para retomar)
+## Como a usuária roda hoje (modo desenvolvedora)
 
 A usuária **não é programadora** — guiar com paciência, comandos um por linha,
 sem `&&` (o PowerShell dela é a versão que não aceita). O app roda **no Windows
-dela**, não neste ambiente (que é um container Linux headless — aqui só dá para
-`npm test`, `npm run typecheck`, `npm run build:app`; a janela do Electron NÃO
-abre aqui).
+dela**, não neste ambiente (container Linux headless; aqui só dá para
+`npm test`, `npm run typecheck`, `npm run build:app`).
 
-Fluxo dela (já configurado com Git):
 ```
 git clone -b claude/embroidery-app-technical-plan-logdvd https://github.com/RomeuNascimento/matrizes.git
 cd matrizes
 npm install
-npm run rebuild        # recompila better-sqlite3/sharp p/ Electron (@electron/rebuild)
+npm run rebuild        # recompila better-sqlite3/sharp p/ Electron
 npm run dev            # abre o app
 ```
-Atualizar depois: `git pull` e `npm run dev`.
+Atualizar depois: `git pull` e `npm run dev`. Quando o instalador estiver
+testado, esse caminho todo é substituído por um duplo-clique.
 
-**Dados da usuária** (biblioteca, favoritas, etc.) ficam em
-`%APPDATA%\matrizes` — separados do código; atualizar o código não apaga nada,
-e os arquivos de bordado originais nunca são tocados. A migração v2 normaliza
-os separadores de caminho automaticamente ao abrir (habilita a navegação por
-subpastas na base já existente, sem reimportar).
+**Dados da usuária** ficam em `%APPDATA%\matrizes` — separados do código;
+atualizar não apaga nada, e os arquivos de bordado originais nunca são tocados.
 
-## Próximos passos sugeridos (para a nova sessão)
+## Comportamento de sincronia (importante para o suporte)
 
-1. **Miniaturas pretas**: rodar o `inspect` num arquivo real colorido que saia
-   preto e conferir versão/cores (ver Observações). É o que falta para saber se
-   há bug de paleta em alguma versão.
-2. **Categorias na UI**: permitir agrupar desenhos em categorias próprias
-   (backend `listarCategorias()`/`editarMatriz(categoria_id)` já existe).
-3. **Tela de configurações** (⬜ ainda sem backend).
-4. Quando estabilizar: **fábrica de instalador** (GitHub Actions) + auto-update.
-
-## Como usar a seleção múltipla (para explicar à usuária)
-
-- Passe o mouse sobre um desenho e clique na **caixinha** que aparece no canto
-  para selecioná-lo. Uma **barra aparece embaixo** com as ações em lote.
-- Atalhos opcionais: **Ctrl+clique** marca/desmarca; **Shift+clique** marca um
-  intervalo; **Ctrl+A** seleciona todos os visíveis; **Esc** limpa.
-- Ações em lote: **Favoritar**, **Marcar testada**, **Renomear em lote**
-  (dá um nome base e numera: "Flor 1", "Flor 2"…) e **Copiar para pendrive**.
-- Clique simples (sem tecla) continua abrindo os **detalhes**; duplo-clique
-  abre o local do arquivo — nada disso mudou.
-
-## Telas de manutenção e etiquetas (para explicar à usuária)
-
-- Na lateral, quando houver, aparece o grupo **Manutenção**:
-  - **⧉ Repetidos**: agrupa arquivos idênticos (mesmo conteúdo) e mostra a
-    miniatura + a lista de cópias, com **Abrir pasta** de cada uma para você
-    decidir qual apagar (o app nunca apaga sozinho).
-  - **⚠ Com problema**: lista arquivos que não deram para ler, com o motivo e
-    **Abrir pasta** para localizar.
-- **Etiquetas** (o jeito de organizar sem mexer nos arquivos): no painel de
-  detalhes, o botão **+ etiqueta** cria/aplica uma marca (ex.: "floral", "natal")
-  e o **×** em cada etiqueta a remove. As etiquetas em uso aparecem na **lateral**,
-  no grupo **Etiquetas** — clicando numa, a grade mostra só os desenhos com ela.
+- **Arquivo novo na pasta** → aparece ao clicar em "↻ Atualizar biblioteca".
+- **Arquivo movido ou renomeado** → religado pelo hash do conteúdo; mantém nome
+  dado, favorita e etiquetas. Não duplica.
+- **Arquivo apagado** → vira "sumido": sai da galeria mas a ficha continua
+  guardada em Manutenção → ⌀ Sumidos, até a usuária mandar tirar do catálogo.
+- **Importação cancelada** → não marca nada como sumido (a varredura ficou pela
+  metade, então a conclusão seria falsa).
+- Nada disso escreve nos arquivos de bordado. O app só lê.
 
 ## Decisões firmadas
 
 - Arquitetura: **Electron + Node/TypeScript + SQLite**; parser próprio em TS
   (sem Python em runtime; PyEmbroidery só como oráculo de teste).
 - Funciona **local e offline**.
-- **Subpastas** são a organização principal.
+- **Subpastas** são a organização principal; **etiquetas** complementam.
 - Segurança: **modo leitura sobre os originais** (nunca move/renomeia/apaga);
-  escrita só no destino de cópia e em `%APPDATA%\matrizes`. Organização se faz
-  por **subpastas** (leitura) e **etiquetas** (só no banco) — não movendo arquivos.
-- **Público-alvo:** mulheres ~50 anos, pouca intimidade com informática. Priorizar
-  simplicidade, botões óbvios e nada que mexa nos arquivos originais.
+  escrita só no destino de cópia e em `%APPDATA%\matrizes`.
+- **Público-alvo:** mulheres ~50 anos, pouca intimidade com informática.
+  Priorizar simplicidade, botões óbvios e nada que mexa nos arquivos originais.
+- IA para auto-organizar por tema: adiada (precisa de internet e tem custo).

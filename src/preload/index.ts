@@ -8,6 +8,9 @@ import type { AppApi } from "../shared/contracts.ts";
 const api: AppApi = {
   selecionarPasta: () => ipcRenderer.invoke("selecionarPasta"),
   importarPasta: (caminho) => ipcRenderer.invoke("importarPasta", caminho),
+  atualizarBiblioteca: () => ipcRenderer.invoke("atualizarBiblioteca"),
+  reprocessarErros: () => ipcRenderer.invoke("reprocessarErros"),
+  cancelarImportacao: () => ipcRenderer.invoke("cancelarImportacao"),
   listarMatrizes: (filtros, ordenacao, pagina) =>
     ipcRenderer.invoke("listarMatrizes", filtros, ordenacao, pagina),
   detalhes: (id) => ipcRenderer.invoke("detalhes", id),
@@ -25,6 +28,10 @@ const api: AppApi = {
   listarArvorePastas: () => ipcRenderer.invoke("listarArvorePastas"),
   listarDuplicados: () => ipcRenderer.invoke("listarDuplicados"),
   listarErros: () => ipcRenderer.invoke("listarErros"),
+  listarSumidos: () => ipcRenderer.invoke("listarSumidos"),
+  removerDoCatalogo: (matrizIds) => ipcRenderer.invoke("removerDoCatalogo", matrizIds),
+  removerPasta: (pastaId) => ipcRenderer.invoke("removerPasta", pastaId),
+  infoApp: () => ipcRenderer.invoke("infoApp"),
   abrirLocal: (matrizId) => ipcRenderer.invoke("abrirLocal", matrizId),
   revelarCaminho: (caminho) => ipcRenderer.invoke("revelarCaminho", caminho),
   estadoInicial: () => ipcRenderer.invoke("estadoInicial"),

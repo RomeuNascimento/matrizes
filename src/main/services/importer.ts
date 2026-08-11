@@ -29,6 +29,10 @@ export interface ResultadoImportacao {
   novos: number;
   atualizados: number;
   inalterados: number;
+  /** Arquivos que a usuária moveu/renomeou e foram religados ao catálogo. */
+  movidos: number;
+  /** Arquivos que estavam catalogados e não estão mais na pasta. */
+  sumidos: number;
   erros: number;
   duracaoMs: number;
   importacaoId: number;
@@ -74,7 +78,9 @@ export async function importarPasta(
   const pastaId = repo.ensurePasta(raiz);
   const importacaoId = repo.iniciarImportacao(pastaId);
 
-  const contadores = { novos: 0, atualizados: 0, inalterados: 0, erros: 0, processados: 0 };
+  const contadores = {
+    novos: 0, atualizados: 0, inalterados: 0, movidos: 0, erros: 0, processados: 0,
+  };
   let arquivoAtual: string | null = null;
 
   const emitir = (fase: ProgressoImportacao["fase"], total: number) =>
@@ -98,6 +104,17 @@ export async function importarPasta(
   });
   const total = encontrados.length;
   emitir("processando", total);
+
+  // 1b. Quem estava catalogado e não apareceu na varredura? Pode ter sido
+  // movido/renomeado (religamos pelo hash, preservando favoritas e etiquetas)
+  // ou apagado de fato (vira "sumido" ao fim, sem perder os dados dela).
+  const caminhosEncontrados = new Set(encontrados.map((f) => f.caminhoAbsoluto));
+  const candidatosMovidos = new Map<string, { id: number }>();
+  for (const a of repo.listarArquivosDaPasta(pastaId)) {
+    if (caminhosEncontrados.has(a.caminhoAbsoluto)) continue;
+    // Só o primeiro de cada hash: se havia cópias idênticas, religar uma basta.
+    if (!candidatosMovidos.has(a.hash)) candidatosMovidos.set(a.hash, { id: a.id });
+  }
 
   // 2. Processamento com limite de concorrência
   const processarUm = async (f: ArquivoEncontrado) => {
@@ -129,8 +146,18 @@ export async function importarPasta(
           criadoEmFs: f.criadoEmFs,
           modificadoEmFs: f.modificadoEmFs,
         };
-        arquivoId = repo.inserirMatrizComArquivo(dados).arquivoId;
-        contadores.novos++;
+        // Caminho novo com conteúdo já conhecido que sumiu de outro lugar =
+        // arquivo movido/renomeado pela usuária: religa em vez de duplicar.
+        const movido = candidatosMovidos.get(hash);
+        if (movido) {
+          candidatosMovidos.delete(hash);
+          repo.religarArquivoMovido(movido.id, dados);
+          arquivoId = movido.id;
+          contadores.movidos++;
+        } else {
+          arquivoId = repo.inserirMatrizComArquivo(dados).arquivoId;
+          contadores.novos++;
+        }
       } else {
         repo.atualizarConteudoArquivo(existente.id, hash, f.tamanhoBytes, f.modificadoEmFs);
         arquivoId = existente.id;
@@ -170,13 +197,26 @@ export async function importarPasta(
   await comLimite(encontrados, options.concorrencia ?? 4, processarUm, options.cancelado);
 
   const cancelada = options.cancelado?.() ?? false;
+
+  // 3. Sumidos: o que continua apontando para um caminho que não apareceu na
+  // varredura. Numa importação cancelada não dá para concluir isso (a varredura
+  // ficou pela metade), então não marcamos nada.
+  let sumidos = 0;
+  if (!cancelada) {
+    for (const a of repo.listarArquivosDaPasta(pastaId)) {
+      if (caminhosEncontrados.has(a.caminhoAbsoluto)) continue;
+      if (a.status !== "ausente") repo.marcarAusente(a.id);
+      sumidos++;
+    }
+  }
+
   const duracaoMs = Date.now() - inicio;
   repo.finalizarImportacao(importacaoId, {
     status: cancelada ? "cancelada" : "concluida",
     total,
     novos: contadores.novos,
     atualizados: contadores.atualizados,
-    removidos: 0,
+    removidos: sumidos,
     erros: contadores.erros,
     duracaoMs,
   });
@@ -188,6 +228,8 @@ export async function importarPasta(
     novos: contadores.novos,
     atualizados: contadores.atualizados,
     inalterados: contadores.inalterados,
+    movidos: contadores.movidos,
+    sumidos,
     erros: contadores.erros,
     duracaoMs,
     importacaoId,

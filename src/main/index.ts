@@ -85,7 +85,7 @@ app.whenReady().then(() => {
     }
   });
 
-  registrarIpc({ repo, cacheDir, getWindow: () => mainWindow });
+  registrarIpc({ repo, cacheDir, dirBackups, getWindow: () => mainWindow });
 
   criarJanela();
 

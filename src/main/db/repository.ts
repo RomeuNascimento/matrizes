@@ -51,6 +51,13 @@ export interface FiltrosBusca {
   maxAlturaMm?: number | null;
 }
 
+/**
+ * Status de um arquivo cujo original não está mais no lugar. A linha é mantida
+ * (preserva favoritas, etiquetas e nome dado pela usuária) mas sai da galeria;
+ * aparece na tela "Sumidos", de onde pode ser removida do catálogo.
+ */
+export const STATUS_AUSENTE = "ausente";
+
 export interface PastaNode {
   nome: string;
   caminho: string;
@@ -265,8 +272,10 @@ export class LibraryRepository {
     ordenacao: Ordenacao = { campo: "nome", direcao: "asc" },
     pagina: { offset: number; limite: number } = { offset: 0, limite: 200 },
   ): { total: number; itens: any[] } {
-    const where: string[] = [];
-    const params: any[] = [];
+    // Arquivos sumidos ficam guardados no catálogo, mas fora da galeria: mostrar
+    // um card cujo original não existe mais só geraria miniatura quebrada.
+    const where: string[] = ["a.status_processamento <> ?"];
+    const params: any[] = [STATUS_AUSENTE];
 
     if (filtros.busca && filtros.busca.trim()) {
       const match = filtros.busca
@@ -324,7 +333,7 @@ export class LibraryRepository {
       params.push(...filtros.etiquetaIds, filtros.etiquetaIds.length);
     }
 
-    const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+    const whereSql = `WHERE ${where.join(" AND ")}`;
     const total = (
       this.db
         .prepare(
@@ -468,9 +477,9 @@ export class LibraryRepository {
 
   /** Monta a árvore de subpastas (a partir dos caminhos relativos), com contagens recursivas. */
   listarArvorePastas(): PastaNode[] {
-    const rows = this.db.prepare("SELECT caminho_relativo AS rel FROM arquivos").all() as Array<{
-      rel: string;
-    }>;
+    const rows = this.db
+      .prepare("SELECT caminho_relativo AS rel FROM arquivos WHERE status_processamento <> ?")
+      .all(STATUS_AUSENTE) as Array<{ rel: string }>;
 
     interface N { nome: string; caminho: string; total: number; filhos: Map<string, N> }
     const raiz = new Map<string, N>();
@@ -551,10 +560,99 @@ export class LibraryRepository {
       .prepare(
         `SELECT hash_sha256 AS hash, COUNT(*) AS quantidade,
                 GROUP_CONCAT(caminho_absoluto, '|') AS caminhos
-         FROM arquivos GROUP BY hash_sha256 HAVING COUNT(*) > 1
+         FROM arquivos WHERE status_processamento <> ?
+         GROUP BY hash_sha256 HAVING COUNT(*) > 1
          ORDER BY quantidade DESC`,
       )
-      .all();
+      .all(STATUS_AUSENTE);
+  }
+
+  // ---- Arquivos sumidos (original não está mais no lugar) -----------------
+
+  /** Todos os arquivos catalogados de uma pasta monitorada (para achar sumidos). */
+  listarArquivosDaPasta(pastaId: number): Array<{
+    id: number;
+    caminhoAbsoluto: string;
+    hash: string;
+    status: string;
+  }> {
+    return this.db
+      .prepare(
+        `SELECT id, caminho_absoluto AS caminhoAbsoluto, hash_sha256 AS hash,
+                status_processamento AS status
+         FROM arquivos WHERE pasta_monitorada_id = ?`,
+      )
+      .all(pastaId) as any;
+  }
+
+  marcarAusente(arquivoId: number): void {
+    this.db
+      .prepare("UPDATE arquivos SET status_processamento = ? WHERE id = ?")
+      .run(STATUS_AUSENTE, arquivoId);
+  }
+
+  listarAusentes(): any[] {
+    return this.db
+      .prepare(
+        `SELECT m.id AS matrizId, m.nome_exibido AS nomeExibido,
+                a.caminho_absoluto AS caminho, a.hash_sha256 AS hash
+         FROM matrizes m JOIN arquivos a ON a.matriz_id = m.id
+         WHERE a.status_processamento = ?
+         ORDER BY m.nome_exibido COLLATE NOCASE`,
+      )
+      .all(STATUS_AUSENTE);
+  }
+
+  /**
+   * Apaga do catálogo as matrizes indicadas (linhas do banco apenas — os
+   * arquivos de bordado nunca são tocados; no caso dos sumidos eles já não
+   * existem mais no disco). Sem ids, remove todos os sumidos.
+   */
+  removerDoCatalogo(matrizIds?: number[]): number {
+    if (matrizIds && !matrizIds.length) return 0;
+    const tx = this.db.transaction(() => {
+      const alvos: number[] = matrizIds
+        ? matrizIds
+        : (
+            this.db
+              .prepare(
+                `SELECT m.id AS id FROM matrizes m JOIN arquivos a ON a.matriz_id = m.id
+                 WHERE a.status_processamento = ?`,
+              )
+              .all(STATUS_AUSENTE) as Array<{ id: number }>
+          ).map((r) => r.id);
+      if (!alvos.length) return 0;
+      const ph = alvos.map(() => "?").join(",");
+      // arquivos/etiquetas saem por ON DELETE CASCADE; a FTS não tem gatilho.
+      this.db.prepare(`DELETE FROM matrizes_fts WHERE rowid IN (${ph})`).run(...alvos);
+      this.db.prepare(`DELETE FROM matrizes WHERE id IN (${ph})`).run(...alvos);
+      return alvos.length;
+    });
+    return tx();
+  }
+
+  /** Marca como resolvidos os erros registrados (antes de tentar de novo). */
+  limparErros(): void {
+    this.db.prepare("UPDATE erros_processamento SET resolvido = 1 WHERE resolvido = 0").run();
+  }
+
+  /** Remove uma pasta monitorada e tudo que veio dela (só linhas do banco). */
+  removerPasta(pastaId: number): number {
+    const tx = this.db.transaction(() => {
+      const ids = (
+        this.db
+          .prepare("SELECT DISTINCT matriz_id AS id FROM arquivos WHERE pasta_monitorada_id = ?")
+          .all(pastaId) as Array<{ id: number }>
+      ).map((r) => r.id);
+      if (ids.length) {
+        const ph = ids.map(() => "?").join(",");
+        this.db.prepare(`DELETE FROM matrizes_fts WHERE rowid IN (${ph})`).run(...ids);
+        this.db.prepare(`DELETE FROM matrizes WHERE id IN (${ph})`).run(...ids);
+      }
+      this.db.prepare("DELETE FROM pastas_monitoradas WHERE id = ?").run(pastaId);
+      return ids.length;
+    });
+    return tx();
   }
 
   // ---- Histórico de importação -------------------------------------------

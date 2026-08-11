@@ -1,9 +1,10 @@
 {
   "name": "matrizes",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "description": "Organizador de matrizes de bordado computadorizado (.PES)",
+  "author": "Matrizes",
   "main": "out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
@@ -11,6 +12,7 @@
     "start": "electron-vite preview",
     "rebuild": "electron-rebuild -f -w better-sqlite3,sharp",
     "dist": "electron-vite build && electron-builder",
+    "icones": "tsx scripts/gerar-icone.ts",
     "inspect": "tsx scripts/inspect.ts",
     "validate": "tsx scripts/validate.ts",
     "test": "vitest run",
@@ -21,6 +23,7 @@
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.10.0",
     "electron": "^33.4.11",
+    "electron-builder": "^25.1.8",
     "electron-vite": "^5.0.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",

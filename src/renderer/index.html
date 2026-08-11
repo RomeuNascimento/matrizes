@@ -28,7 +28,11 @@
       <aside class="sidebar">
         <div class="marca"><span class="marca-flor">🌸</span> Matrizes</div>
         <nav id="nav" class="nav"></nav>
-        <button id="btn-add-pasta" class="secundario">+ Adicionar pasta</button>
+        <div class="lateral-acoes">
+          <button id="btn-atualizar" class="secundario" title="Procurar desenhos novos nas suas pastas">↻ Atualizar biblioteca</button>
+          <button id="btn-add-pasta" class="secundario">+ Adicionar pasta</button>
+          <button id="btn-config" class="secundario">⚙ Configurações</button>
+        </div>
       </aside>
 
       <main class="conteudo">
@@ -88,6 +92,9 @@
         <div class="barra"><div id="prog-barra" class="barra-preench"></div></div>
         <p id="prog-texto" class="prog-texto"></p>
         <p class="nota">Você já pode usar os desenhos que forem aparecendo.</p>
+        <div class="modal-acoes centro">
+          <button id="prog-cancelar" class="secundario">Parar</button>
+        </div>
       </div>
     </div>
 

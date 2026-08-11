@@ -6,19 +6,27 @@ de matrizes de bordado computadorizado (foco em arquivos `.PES`).
 > **Promessa:** ver todas as suas matrizes como imagens e encontrar qualquer
 > desenho em segundos.
 
-## Estado atual
+## Estado atual (v1.0.0)
 
-O núcleo do MVP está implementado e testado ponta a ponta:
+Aplicativo completo e testado ponta a ponta:
 
 - ✅ **Leitor de PES** próprio em TypeScript — paridade exata com o oráculo
-  (PyEmbroidery) nos 37 arquivos reais, incluindo PES v1–v6 e paleta embutida.
+  (PyEmbroidery) nos 37 arquivos reais, incluindo PES v1–v10 e paleta embutida.
 - ✅ **Miniaturas** renderizadas em TS (SVG → PNG via `sharp`), nas cores reais das linhas.
 - ✅ **Banco SQLite** com esquema completo, migrações, seeds e busca sem acento (FTS5).
 - ✅ **Varredura + hash + importação** incremental, com miniaturas em cache por hash.
-- ✅ **App Electron**: galeria, busca, filtros, painel de detalhes, favoritar/testada,
-  abrir local do arquivo, barra de progresso.
+- ✅ **Sincronia com o disco:** arquivos movidos ou renomeados são religados pelo
+  hash (mantendo favoritas e etiquetas); apagados viram "sumidos", nunca somem
+  do catálogo sem a usuária mandar.
+- ✅ **App Electron**: galeria paginada, busca, filtros, subpastas, etiquetas,
+  seleção múltipla e ações em lote, telas de manutenção, configurações,
+  cópia para pendrive e backup automático.
+- ✅ **Instalador do Windows** montado por GitHub Actions (`npm run dist` num
+  runner Windows), com ícone próprio.
 
-Detalhes e decisões: [`PLANEJAMENTO_TECNICO.md`](./PLANEJAMENTO_TECNICO.md) ·
+Status detalhado: [`docs/STATUS.md`](./docs/STATUS.md) ·
+Guia da compradora: [`docs/INSTALACAO.md`](./docs/INSTALACAO.md) ·
+Decisões: [`PLANEJAMENTO_TECNICO.md`](./PLANEJAMENTO_TECNICO.md) ·
 Prova técnica: [`docs/FASE1-leitura-pes.md`](./docs/FASE1-leitura-pes.md).
 
 ## Estrutura
@@ -44,9 +52,10 @@ scripts/          inspeção, validação, oráculo (Python), galeria
 
 ```bash
 npm install
-npm test              # 55+ testes (parser, banco, pipeline)
+npm test              # 70 testes (parser, banco, pipeline, sincronia)
 npm run typecheck     # checagem de tipos
 npm run validate      # compara o leitor TS com o oráculo, arquivo a arquivo
+npm run icones        # regera build/icon.png e build/icon.ico
 npm run dev           # abre o app em modo desenvolvimento (requer ambiente gráfico)
 ```
 
@@ -56,9 +65,15 @@ npm run dev           # abre o app em modo desenvolvimento (requer ambiente grá
 
 ## Empacotamento (Windows)
 
+**Pelo GitHub (recomendado — não precisa de um PC Windows):** aba **Actions** →
+**Instalador do Windows** → **Run workflow**. O `.exe` sai como artefato. Para
+publicar uma versão, basta uma tag: `git tag v1.0.0 && git push origin v1.0.0`.
+
+**Numa máquina Windows:**
+
 ```bash
-npm i -D electron-builder @electron/rebuild   # se ainda não instalados
-npm run dist                                   # gera o instalador NSIS em dist/
+npm install
+npm run dist          # gera o instalador NSIS em dist/
 ```
 
 ## Ferramentas de referência (Python)
